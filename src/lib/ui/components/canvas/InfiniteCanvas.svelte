@@ -1,32 +1,59 @@
 <script lang="ts">
-	import type { CanvasObject } from '$lib/data/vault';
-	import TextAreaObject from '../text-area/TextAreaObject.svelte';
+	import { type CameraTransform } from '$lib/data/common';
+	import type { Snippet } from 'svelte';
+	import PannableTransform from './PannableTransform.svelte';
 
 	interface Props {
-		objects: CanvasObject[];
+		transform: CameraTransform;
+		onBackgroundTap?: () => void;
+		background: Snippet<[{ transform: CameraTransform }]>;
+		children: Snippet;
 	}
 
-	let { objects = $bindable() }: Props = $props();
+	let { transform = $bindable(), onBackgroundTap, background, children }: Props = $props();
 </script>
 
-<div class="canvas">
-	{#each objects as object (object)}
-		<TextAreaObject
-			id={object.id}
-			bind:content={object.content}
-			bind:anchor={object.anchor}
-			bind:alignH={object.alignH}
-			bind:alignV={object.alignV}
-			bind:fixedWidth={object.fixedWidth}
-		/>
-	{/each}
-</div>
+<PannableTransform bind:transform onClick={onBackgroundTap}>
+	{#snippet content({ containerEvents, backgroundEvents })}
+		<div class="canvas" {@attach containerEvents}>
+			<div class="background" aria-label="Background" tabindex="-1" {@attach backgroundEvents}>
+				{@render background({ transform })}
+			</div>
+
+			<div
+				class="panned"
+				style:--x="{transform.position.x}px"
+				style:--y="{transform.position.y}px"
+				style:--scale={transform.scale}
+			>
+				{@render children()}
+			</div>
+		</div>
+	{/snippet}
+</PannableTransform>
 
 <style lang="scss">
 	.canvas {
+		overflow: hidden;
 		position: relative;
 		display: grid;
 		place-items: center;
 		flex: 1;
+	}
+
+	.background {
+		position: absolute;
+		outline: none;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		display: grid;
+	}
+
+	.panned {
+		position: relative;
+
+		transform: scale(var(--scale)) translate(var(--x), var(--y));
 	}
 </style>

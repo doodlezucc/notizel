@@ -47,12 +47,7 @@
 		children: Snippet;
 	};
 
-	let {
-		anchor = $bindable(),
-		alignH = $bindable(),
-		alignV = $bindable(),
-		children
-	}: Props = $props();
+	let { anchor, alignH, alignV, children }: Props = $props();
 </script>
 
 <div

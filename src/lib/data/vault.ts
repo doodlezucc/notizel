@@ -1,6 +1,7 @@
 import type { Content as TiptapContent } from '@tiptap/core';
 import type { Temporal } from 'temporal-polyfill';
 import type {
+	CameraTransform,
 	DynamicWidthTextAlignment,
 	FixedWidthTextAlignment,
 	ID,
@@ -19,6 +20,7 @@ export interface VaultFileMeta {
 }
 
 export interface CanvasFileData {
+	camera: CameraTransform;
 	objects: CanvasObject[];
 }
 

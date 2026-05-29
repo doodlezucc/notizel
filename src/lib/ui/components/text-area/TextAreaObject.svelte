@@ -7,14 +7,19 @@
 	} from './ObjectAnchor.svelte';
 	import TiptapArea from './TiptapArea.svelte';
 
-	type Props = Omit<TextCanvasObject, 'type'>;
+	type Props = Omit<TextCanvasObject, 'type'> & {
+		isEditing: boolean;
+		computeSize?: (clientRect: DOMRect) => Size;
+	};
 
 	let {
 		content = $bindable(),
 		anchor = $bindable(),
 		alignH = $bindable(),
 		alignV = $bindable(),
-		fixedWidth = $bindable()
+		fixedWidth = $bindable(),
+		isEditing,
+		computeSize
 	}: Props = $props();
 
 	let tiptapArea = $state<TiptapArea>();
@@ -23,7 +28,13 @@
 	function getRenderedSize(): Size {
 		if (!container) throw new Error('Container is not mounted');
 
-		return container.getBoundingClientRect();
+		const clientRect = container.getBoundingClientRect();
+
+		if (computeSize) {
+			return computeSize(clientRect);
+		} else {
+			return clientRect;
+		}
 	}
 
 	function switchAlignH() {
@@ -58,9 +69,14 @@
 	}
 </script>
 
-<ObjectAnchor bind:anchor bind:alignH bind:alignV>
-	<div class="text-area" bind:this={container} style:--w="{fixedWidth}px" style:text-align={alignH}>
-		<TiptapArea bind:this={tiptapArea} bind:content disableInteraction={false} />
+<ObjectAnchor {anchor} {alignH} {alignV}>
+	<div
+		class="text-area"
+		bind:this={container}
+		style:--w={fixedWidth !== undefined ? `${fixedWidth}px` : undefined}
+		style:text-align={alignH}
+	>
+		<TiptapArea bind:this={tiptapArea} bind:content disableInteraction={!isEditing} />
 
 		<div class="tools">
 			<button onclick={switchAlignH}>{alignH}</button>

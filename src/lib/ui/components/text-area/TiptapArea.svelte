@@ -21,7 +21,7 @@
 	let isEditorFocused = $derived(editor?.isFocused ?? false);
 
 	$effect(() => {
-		if (editor) {
+		if (editor && editor.isEditable !== !disableInteraction) {
 			editor.setEditable(!disableInteraction);
 		}
 	});
