@@ -1,0 +1,14 @@
+<script lang="ts">
+	import '$lib/ui/style/global.scss';
+	import '@fontsource-variable/cascadia-code/wght.css';
+
+	import favicon from '$lib/assets/favicon.svg';
+
+	let { children } = $props();
+</script>
+
+<svelte:head>
+	<link rel="icon" href={favicon} />
+</svelte:head>
+
+{@render children()}

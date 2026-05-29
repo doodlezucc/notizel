@@ -1,0 +1,33 @@
+body {
+	font-family: 'Cascadia Code Variable', sans-serif;
+	font-variant-ligatures: none;
+	color: #181413;
+
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+	font-weight: normal;
+	margin: 0;
+}
+
+p {
+	margin: 0;
+}
+
+ol,
+ul {
+	margin: 0;
+	padding-inline-start: 2em;
+}
+
+a {
+	color: inherit;
+}

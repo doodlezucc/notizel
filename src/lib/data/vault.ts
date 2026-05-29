@@ -1,0 +1,39 @@
+import type { Content as TiptapContent } from '@tiptap/core';
+import type { Temporal } from 'temporal-polyfill';
+import type {
+	DynamicWidthTextAlignment,
+	FixedWidthTextAlignment,
+	ID,
+	Vector,
+	VerticalAlignment
+} from './common';
+
+export interface Vault {
+	files: VaultFileMeta[];
+}
+
+export interface VaultFileMeta {
+	name: string;
+	createdAt: Temporal.Instant;
+	modifiedAt: Temporal.Instant;
+}
+
+export interface CanvasFileData {
+	objects: CanvasObject[];
+}
+
+export type CanvasObject = TextCanvasObject;
+
+export type TextCanvasObject = {
+	id: ID;
+	type: 'text';
+	anchor: Vector;
+
+	content: TiptapContent;
+
+	/** This only decides in what vertical direction to scale the box when adding new lines of text. */
+	alignV: VerticalAlignment;
+} & (
+	| { fixedWidth?: never; alignH: DynamicWidthTextAlignment }
+	| { fixedWidth: number; alignH: FixedWidthTextAlignment }
+);
