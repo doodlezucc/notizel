@@ -46,7 +46,7 @@
 		activeGesture.previousPointer = pointer;
 	}
 
-	function onPointerUp(ev: PointerEvent) {
+	function onPointerUp() {
 		if (!activeGesture) return;
 
 		if (activeGesture.isClickEvent) {

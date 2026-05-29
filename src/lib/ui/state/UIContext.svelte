@@ -19,7 +19,7 @@
 	const uiCanvasState = new UICanvasState({
 		camera: {
 			position: { x: 0, y: 0 },
-			scale: 2
+			scale: 1
 		},
 		objects: [
 			{

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { useUI } from '$lib/ui/state/UIContext.svelte';
-	import TextAreaObject from '../text-area/TextAreaObject.svelte';
+	import UITextAreaObject from '../text-area/UITextAreaObject.svelte';
 	import EditorCanvasBackground from './EditorCanvasBackground.svelte';
 	import InfiniteCanvas from './InfiniteCanvas.svelte';
 
@@ -18,19 +18,7 @@
 		<EditorCanvasBackground />
 	{/snippet}
 
-	{#each ui.canvas.objects as object (object)}
-		<TextAreaObject
-			id={object.id}
-			isEditing={ui.selection.selectedIds.has(object.id)}
-			computeSize={(rect) => ({
-				width: rect.width / ui.canvas.camera.scale,
-				height: rect.height / ui.canvas.camera.scale
-			})}
-			bind:content={object.content}
-			bind:anchor={object.anchor}
-			bind:alignH={object.alignH}
-			bind:alignV={object.alignV}
-			bind:fixedWidth={object.fixedWidth}
-		/>
+	{#each ui.canvas.objects as object (object.id)}
+		<UITextAreaObject bind:object />
 	{/each}
 </InfiniteCanvas>

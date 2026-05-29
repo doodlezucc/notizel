@@ -18,7 +18,6 @@
 
 	let editorState = $state.raw<EditorState>();
 	let editor = $derived(editorState?.editor);
-	let isEditorFocused = $derived(editor?.isFocused ?? false);
 
 	$effect(() => {
 		if (editor && editor.isEditable !== !disableInteraction) {
@@ -26,8 +25,9 @@
 		}
 	});
 
-	export function isFocused() {
-		return isEditorFocused;
+	export function focus() {
+		editor?.commands.focus();
+		editor?.commands.selectAll();
 	}
 
 	onMount(() => {
@@ -57,6 +57,7 @@
 <style lang="scss">
 	:global {
 		.tiptap {
+			outline: none;
 			padding: 4px;
 
 			h1,

@@ -7,7 +7,8 @@
 	} from './ObjectAnchor.svelte';
 	import TiptapArea from './TiptapArea.svelte';
 
-	type Props = Omit<TextCanvasObject, 'type'> & {
+	type Props = Omit<TextCanvasObject, 'id' | 'type'> & {
+		isSelected: boolean;
 		isEditing: boolean;
 		computeSize?: (clientRect: DOMRect) => Size;
 	};
@@ -18,12 +19,18 @@
 		alignH = $bindable(),
 		alignV = $bindable(),
 		fixedWidth = $bindable(),
+		isSelected,
 		isEditing,
-		computeSize
+		computeSize,
+		...attachments
 	}: Props = $props();
 
 	let tiptapArea = $state<TiptapArea>();
 	let container = $state<HTMLElement>();
+
+	export function getTiptapArea() {
+		return tiptapArea;
+	}
 
 	function getRenderedSize(): Size {
 		if (!container) throw new Error('Container is not mounted');
@@ -75,6 +82,9 @@
 		bind:this={container}
 		style:--w={fixedWidth !== undefined ? `${fixedWidth}px` : undefined}
 		style:text-align={alignH}
+		class:selected={isSelected}
+		class:editing={isEditing}
+		{...attachments}
 	>
 		<TiptapArea bind:this={tiptapArea} bind:content disableInteraction={!isEditing} />
 
@@ -90,7 +100,17 @@
 		position: absolute;
 		width: var(--w, max-content);
 
-		border: 1px solid currentColor;
+		&:hover {
+			outline: 1px solid #0003;
+		}
+
+		&.selected {
+			outline: 1px solid currentColor;
+		}
+
+		&.editing {
+			outline: 2px solid #55f;
+		}
 	}
 
 	.tools {
