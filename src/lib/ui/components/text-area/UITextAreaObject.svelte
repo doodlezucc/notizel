@@ -24,7 +24,19 @@
 		}
 	});
 
-	function onClick(ev: MouseEvent) {
+	function onPointerDown(ev: PointerEvent) {
+		if (!isEditing) {
+			ev.preventDefault();
+		}
+
+		const isAlreadySelected = ui.selection.selectedIds.has(object.id);
+
+		if (!isAlreadySelected) {
+			ui.selection.select(object.id, { deselectOthers: !ev.shiftKey });
+		}
+	}
+
+	function onDoubleClick(ev: MouseEvent) {
 		ev.preventDefault();
 
 		if (isEditing) return;
@@ -34,17 +46,17 @@
 		if (isAlreadySelected) {
 			isEditing = true;
 			tick().then(() => textArea.getTiptapArea()!.focus());
-		} else {
-			ui.selection.select(object.id, { deselectOthers: !ev.shiftKey });
 		}
 	}
 
 	function createAttachment(): Attachment<HTMLElement> {
 		return (element) => {
-			element.addEventListener('click', onClick);
+			element.addEventListener('pointerdown', onPointerDown);
+			element.addEventListener('dblclick', onDoubleClick);
 
 			return () => {
-				element.removeEventListener('click', onClick);
+				element.removeEventListener('pointerdown', onPointerDown);
+				element.removeEventListener('dblclick', onDoubleClick);
 			};
 		};
 	}

@@ -26,6 +26,8 @@
 	let activeGesture: GestureContext | undefined;
 
 	function onPointerDown(ev: PointerEvent) {
+		ev.preventDefault();
+
 		activeGesture = {
 			previousPointer: { x: ev.screenX, y: ev.screenY },
 			isClickEvent: true
@@ -59,6 +61,7 @@
 	}
 
 	function onDoubleClick(ev: MouseEvent) {
+		ev.preventDefault();
 		console.log('dbl', ev);
 	}
 
