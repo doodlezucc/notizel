@@ -3,6 +3,7 @@
 	import { useUI } from '$lib/ui/state/UIContext.svelte';
 	import { tick } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
+	import UICanvasDraggableObject from '../canvas/UICanvasDraggableObject.svelte';
 	import TextAreaObject from './TextAreaObject.svelte';
 
 	interface Props {
@@ -24,18 +25,6 @@
 		}
 	});
 
-	function onPointerDown(ev: PointerEvent) {
-		if (!isEditing) {
-			ev.preventDefault();
-		}
-
-		const isAlreadySelected = ui.selection.selectedIds.has(object.id);
-
-		if (!isAlreadySelected) {
-			ui.selection.select(object.id, { deselectOthers: !ev.shiftKey });
-		}
-	}
-
 	function onDoubleClick(ev: MouseEvent) {
 		ev.preventDefault();
 
@@ -51,29 +40,32 @@
 
 	function createAttachment(): Attachment<HTMLElement> {
 		return (element) => {
-			element.addEventListener('pointerdown', onPointerDown);
 			element.addEventListener('dblclick', onDoubleClick);
 
 			return () => {
-				element.removeEventListener('pointerdown', onPointerDown);
 				element.removeEventListener('dblclick', onDoubleClick);
 			};
 		};
 	}
 </script>
 
-<TextAreaObject
-	bind:this={textArea}
-	{isSelected}
-	{isEditing}
-	computeSize={(rect) => ({
-		width: rect.width / ui.canvas.camera.scale,
-		height: rect.height / ui.canvas.camera.scale
-	})}
-	bind:content={object.content}
-	bind:anchor={object.anchor}
-	bind:alignH={object.alignH}
-	bind:alignV={object.alignV}
-	bind:fixedWidth={object.fixedWidth}
-	{@attach createAttachment()}
-/>
+<UICanvasDraggableObject objectId={object.id} ignoreDragging={isEditing}>
+	{#snippet content({ draggableEvents })}
+		<TextAreaObject
+			bind:this={textArea}
+			{isSelected}
+			{isEditing}
+			computeSize={(rect) => ({
+				width: rect.width / ui.canvas.camera.scale,
+				height: rect.height / ui.canvas.camera.scale
+			})}
+			bind:content={object.content}
+			bind:anchor={object.anchor}
+			bind:alignH={object.alignH}
+			bind:alignV={object.alignV}
+			bind:fixedWidth={object.fixedWidth}
+			{@attach draggableEvents}
+			{@attach createAttachment()}
+		/>
+	{/snippet}
+</UICanvasDraggableObject>
