@@ -55,4 +55,15 @@ export class UICanvasState {
 				return;
 		}
 	}
+
+	deleteSelection() {
+		const idsToRemove = new Set(this.selection.selectedIds);
+		if (idsToRemove.size === 0) {
+			return;
+		}
+
+		this.stopEditing();
+		this.selection.clear();
+		this.#canvas.objects = this.#canvas.objects.filter((object) => !idsToRemove.has(object.id));
+	}
 }
