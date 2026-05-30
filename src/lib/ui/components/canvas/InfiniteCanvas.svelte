@@ -1,19 +1,26 @@
 <script lang="ts">
 	import { type CameraTransform } from '$lib/data/common';
 	import type { Snippet } from 'svelte';
-	import PannableTransform from './PannableTransform.svelte';
+	import PannableTransform, { type TransformedPointerEvent } from './PannableTransform.svelte';
 
 	interface Props {
 		transform: CameraTransform;
-		onBackgroundTap?: () => void;
+		onBackgroundTap?: (ev: TransformedPointerEvent) => void;
+		onBackgroundDoubleTap?: (ev: TransformedPointerEvent) => void;
 		background: Snippet<[{ transform: CameraTransform }]>;
 		children: Snippet;
 	}
 
-	let { transform = $bindable(), onBackgroundTap, background, children }: Props = $props();
+	let {
+		transform = $bindable(),
+		onBackgroundTap,
+		onBackgroundDoubleTap,
+		background,
+		children
+	}: Props = $props();
 </script>
 
-<PannableTransform bind:transform onClick={onBackgroundTap}>
+<PannableTransform bind:transform {onBackgroundTap} {onBackgroundDoubleTap}>
 	{#snippet content({ containerEvents, backgroundEvents })}
 		<div class="canvas" {@attach containerEvents}>
 			<div class="background" aria-label="Background" tabindex="-1" {@attach backgroundEvents}>

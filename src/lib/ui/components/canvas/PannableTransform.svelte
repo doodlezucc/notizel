@@ -1,5 +1,14 @@
+<script lang="ts" module>
+	import type { Vector } from '$lib/data/common';
+
+	export interface TransformedPointerEvent {
+		pointerInClientSpace: Vector;
+		pointerInCanvasSpace: Vector;
+	}
+</script>
+
 <script lang="ts">
-	import { Vectors, type CameraTransform, type Vector } from '$lib/data/common';
+	import { Vectors, type CameraTransform } from '$lib/data/common';
 	import { type Snippet } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 
@@ -10,11 +19,12 @@
 
 	interface Props {
 		transform: CameraTransform;
-		onClick?: () => void;
+		onBackgroundTap?: (ev: TransformedPointerEvent) => void;
+		onBackgroundDoubleTap?: (ev: TransformedPointerEvent) => void;
 		content: Snippet<[ChildContext]>;
 	}
 
-	let { transform = $bindable(), onClick, content }: Props = $props();
+	let { transform = $bindable(), content, ...events }: Props = $props();
 
 	let containerRect: DOMRect | undefined;
 
@@ -25,11 +35,33 @@
 
 	let activeGesture: GestureContext | undefined;
 
+	/** Returns the offset from the center of the container to the pointer in pixels. */
+	function getPointerOffsetInClientSpace(pointerInClientSpace: Vector): Vector {
+		return containerRect
+			? Vectors.subtract(pointerInClientSpace, {
+					x: containerRect.left + containerRect.width / 2,
+					y: containerRect.top + containerRect.height / 2
+				})
+			: { x: 0, y: 0 };
+	}
+
+	function createTransformedPointerEvent(pointerInClientSpace: Vector): TransformedPointerEvent {
+		return {
+			pointerInClientSpace,
+			get pointerInCanvasSpace() {
+				return Vectors.subtract(
+					Vectors.scale(getPointerOffsetInClientSpace(pointerInClientSpace), 1 / transform.scale),
+					transform.position
+				);
+			}
+		};
+	}
+
 	function onPointerDown(ev: PointerEvent) {
 		ev.preventDefault();
 
 		activeGesture = {
-			previousPointer: { x: ev.screenX, y: ev.screenY },
+			previousPointer: { x: ev.clientX, y: ev.clientY },
 			isClickEvent: true
 		};
 	}
@@ -40,7 +72,7 @@
 		// Maybe a threshold is needed here on mobile
 		activeGesture.isClickEvent = false;
 
-		const pointer: Vector = { x: ev.screenX, y: ev.screenY };
+		const pointer: Vector = { x: ev.clientX, y: ev.clientY };
 
 		const pointerDelta = Vectors.subtract(pointer, activeGesture.previousPointer);
 		const delta = Vectors.scale(pointerDelta, 1 / transform.scale);
@@ -54,7 +86,7 @@
 		if (!activeGesture) return;
 
 		if (activeGesture.isClickEvent) {
-			onClick?.();
+			events.onBackgroundTap?.(createTransformedPointerEvent(activeGesture.previousPointer));
 		}
 
 		activeGesture = undefined;
@@ -62,17 +94,14 @@
 
 	function onDoubleClick(ev: MouseEvent) {
 		ev.preventDefault();
-		console.log('dbl', ev);
+		events.onBackgroundDoubleTap?.(createTransformedPointerEvent({ x: ev.clientX, y: ev.clientY }));
 	}
 
 	function onWheel(ev: WheelEvent) {
-		// Offset from the center of the element to the mouse position in pixels
-		const pivotInClientSpace: Vector = containerRect
-			? {
-					x: ev.clientX - containerRect.left - containerRect.width / 2,
-					y: ev.clientY - containerRect.top - containerRect.height / 2
-				}
-			: { x: 0, y: 0 };
+		const pivotOffsetInClientSpace = getPointerOffsetInClientSpace({
+			x: ev.clientX,
+			y: ev.clientY
+		});
 
 		const wheelMax = 50;
 		const speed = 0.5;
@@ -86,7 +115,7 @@
 
 		// The pivot has to keep the same screen offset to the center as before scaling
 		const pivotOffsetBetweenScaling = Vectors.scale(
-			pivotInClientSpace,
+			pivotOffsetInClientSpace,
 			1 / newScale - 1 / transform.scale
 		);
 		const newPosition = Vectors.add(transform.position, pivotOffsetBetweenScaling);

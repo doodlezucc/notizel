@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { TextCanvasObject } from '$lib/data/vault';
 	import { useUI } from '$lib/ui/state/UIContext.svelte';
-	import { tick } from 'svelte';
+	import { untrack } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import UICanvasDraggableObject from '../canvas/UICanvasDraggableObject.svelte';
 	import TextAreaObject from './TextAreaObject.svelte';
@@ -15,26 +15,29 @@
 	const ui = useUI();
 
 	let textArea = $state() as TextAreaObject;
-	let isEditing = $state(false);
+	let isEditing = $derived(ui.editingScope?.objectId === object.id);
 
 	let isSelected = $derived(ui.selection.selectedIds.has(object.id));
 
 	$effect(() => {
 		if (isEditing && !isSelected) {
-			isEditing = false;
+			ui.stopEditing();
+		}
+	});
+
+	$effect(() => {
+		if (isEditing) {
+			untrack(() => {
+				textArea.getTiptapArea()?.focus();
+			});
 		}
 	});
 
 	function onDoubleClick(ev: MouseEvent) {
 		ev.preventDefault();
 
-		if (isEditing) return;
-
-		const isAlreadySelected = ui.selection.selectedIds.has(object.id);
-
-		if (isAlreadySelected) {
-			isEditing = true;
-			tick().then(() => textArea.getTiptapArea()!.focus());
+		if (!isEditing) {
+			ui.startEditing({ type: 'text', objectId: object.id });
 		}
 	}
 

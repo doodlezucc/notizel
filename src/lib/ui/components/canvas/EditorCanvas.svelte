@@ -10,8 +10,11 @@
 <InfiniteCanvas
 	bind:transform={ui.canvas.camera}
 	onBackgroundTap={() => {
-		console.log('background tap');
+		ui.stopEditing();
 		ui.selection.clear();
+	}}
+	onBackgroundDoubleTap={(ev) => {
+		ui.addTextAreaObject(ev.pointerInCanvasSpace);
 	}}
 >
 	{#snippet background()}
