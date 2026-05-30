@@ -18,21 +18,10 @@
 	}}
 >
 	{#snippet background()}
-		<EditorCanvasBackground />
+		<EditorCanvasBackground transform={ui.canvas.camera} />
 	{/snippet}
 
 	{#each ui.canvas.objects as object (object.id)}
 		<UITextAreaObject bind:object />
 	{/each}
-
-	<div class="origin"></div>
 </InfiniteCanvas>
-
-<style lang="scss">
-	.origin {
-		position: absolute;
-		width: 40px;
-		height: 40px;
-		background-color: black;
-	}
-</style>
