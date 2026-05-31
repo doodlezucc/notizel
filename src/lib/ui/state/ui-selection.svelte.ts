@@ -3,7 +3,7 @@ import { SvelteSet } from 'svelte/reactivity';
 
 export class UISelection {
 	#selectedIds = new SvelteSet<ID>();
-	#pivotId = $state<ID>();
+	#pivotId = $state<ID | null>(null);
 
 	readonly selectedIds = $derived(this.#selectedIds) as ReadonlySet<ID>;
 	readonly pivotId = $derived(this.#pivotId);
@@ -17,6 +17,13 @@ export class UISelection {
 		this.#pivotId = id;
 	}
 
+	deselect(id: ID) {
+		this.#selectedIds.delete(id);
+		if (this.#pivotId === id) {
+			this.#pivotId = null;
+		}
+	}
+
 	set(selectedIds: Iterable<ID>) {
 		this.#selectedIds.clear();
 
@@ -27,8 +34,8 @@ export class UISelection {
 
 	toggle(id: ID) {
 		if (this.#selectedIds.delete(id)) {
-			if (this.#pivotId) {
-				this.#pivotId = undefined;
+			if (this.#pivotId === id) {
+				this.#pivotId = null;
 			}
 		} else {
 			// ID was not previously present in the set.
@@ -38,6 +45,6 @@ export class UISelection {
 
 	clear() {
 		this.#selectedIds.clear();
-		this.#pivotId = undefined;
+		this.#pivotId = null;
 	}
 }

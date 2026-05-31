@@ -1,11 +1,14 @@
 import { Vectors, type Vector } from '$lib/data/common';
 import type { CanvasFileData, CanvasObject } from '$lib/data/vault';
+import { ChangeHistory } from '$lib/packages/history';
 import type { UIEditingScope } from './ui-editing-scope';
 import { UISelection } from './ui-selection.svelte';
 
 export class UICanvasState {
 	#canvas = $state() as CanvasFileData;
 	#editingScope = $state(null) as UIEditingScope | null;
+
+	#canvasHistory = new ChangeHistory();
 	readonly selection = new UISelection();
 
 	constructor(canvas: CanvasFileData) {
@@ -14,6 +17,22 @@ export class UICanvasState {
 
 	readonly canvas = $derived(this.#canvas);
 	readonly editingScope = $derived(this.#editingScope);
+
+	private get focusedHistory(): ChangeHistory | null {
+		if (this.#editingScope === null) {
+			return this.#canvasHistory;
+		} else {
+			return null;
+		}
+	}
+
+	undo() {
+		return this.focusedHistory?.undo() ?? null;
+	}
+
+	redo() {
+		return this.focusedHistory?.redo() ?? null;
+	}
 
 	stopEditing() {
 		this.#editingScope = null;
@@ -24,18 +43,25 @@ export class UICanvasState {
 	}
 
 	addTextAreaObject(center: Vector) {
-		const newObjectId = crypto.randomUUID(); // Maybe swap this out with a simple incremental ID
+		this.#canvasHistory.execute('Add text area', () => {
+			const newObjectId = crypto.randomUUID(); // Maybe swap this out with a simple incremental ID
 
-		this.#canvas.objects.push({
-			id: newObjectId,
-			type: 'text',
-			content: '',
-			alignH: 'center',
-			alignV: 'center',
-			anchor: center
+			this.#canvas.objects.push({
+				id: newObjectId,
+				type: 'text',
+				content: '',
+				alignH: 'center',
+				alignV: 'center',
+				anchor: center
+			});
+			this.selection.select(newObjectId, { deselectOthers: true });
+			this.#editingScope = { type: 'text', objectId: newObjectId };
+
+			return () => {
+				this.selection.deselect(newObjectId);
+				this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== newObjectId);
+			};
 		});
-		this.selection.select(newObjectId, { deselectOthers: true });
-		this.#editingScope = { type: 'text', objectId: newObjectId };
 	}
 
 	moveSelectionByOffset(offset: Vector) {
