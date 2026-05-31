@@ -1,4 +1,4 @@
-import { Vectors, type ID, type Vector } from '$lib/data/common';
+import { Vectors, type Vector } from '$lib/data/common';
 import type { CanvasFileData, CanvasObject } from '$lib/data/vault';
 import type { UIEditingScope } from './ui-editing-scope';
 import { UISelection } from './ui-selection.svelte';
@@ -38,11 +38,9 @@ export class UICanvasState {
 		this.#editingScope = { type: 'text', objectId: newObjectId };
 	}
 
-	moveObjectsByOffset(objectIds: Iterable<ID>, offset: Vector) {
-		const objectIdSet = new Set(objectIds);
-
+	moveSelectionByOffset(offset: Vector) {
 		for (const object of this.#canvas.objects) {
-			if (objectIdSet.has(object.id)) {
+			if (this.selection.selectedIds.has(object.id)) {
 				this.moveObjectByOffset(object, offset);
 			}
 		}

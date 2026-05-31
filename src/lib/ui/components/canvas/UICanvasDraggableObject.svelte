@@ -48,7 +48,7 @@
 		const pointerDelta = Vectors.subtract(pointer, activeDragging.previousPointer);
 		const offset = Vectors.scale(pointerDelta, 1 / ui.canvas.camera.scale);
 
-		ui.moveObjectsByOffset(ui.selection.selectedIds, offset);
+		ui.moveSelectionByOffset(offset);
 		activeDragging.previousPointer = pointer;
 	}
 
