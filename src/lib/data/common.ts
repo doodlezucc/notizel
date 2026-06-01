@@ -21,6 +21,9 @@ export const Vectors = {
 	},
 	scale: ({ x, y }: Vector, scale: number): Vector => {
 		return { x: x * scale, y: y * scale };
+	},
+	negate: ({ x, y }: Vector): Vector => {
+		return { x: -x, y: -y };
 	}
 };
 

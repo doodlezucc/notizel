@@ -1,4 +1,4 @@
-import { Vectors, type Vector } from '$lib/data/common';
+import { Vectors, type ID, type Vector } from '$lib/data/common';
 import type { CanvasFileData, CanvasObject } from '$lib/data/vault';
 import { ChangeHistory } from '$lib/packages/history';
 import { isTipTapContentEmpty } from '$lib/util/tiptap-is-empty';
@@ -116,8 +116,30 @@ export class UICanvasState {
 	}
 
 	moveSelectionByOffset(offset: Vector) {
+		this.moveObjectsByOffset(this.selection.selectedIds, offset);
+	}
+
+	submitMoveSelectionByOffset(totalOffset: Vector) {
+		const affectedIds = new Set(this.selection.selectedIds);
+
+		const message = affectedIds.size === 1 ? 'Move object' : `Move ${affectedIds.size} objects`;
+
+		this.#canvasHistory.execute(message, ({ isRedo }) => {
+			if (isRedo) {
+				this.selection.set(affectedIds);
+				this.moveObjectsByOffset(affectedIds, totalOffset);
+			}
+
+			return () => {
+				this.selection.set(affectedIds);
+				this.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
+			};
+		});
+	}
+
+	private moveObjectsByOffset(objectIds: ReadonlySet<ID>, offset: Vector) {
 		for (const object of this.#canvas.objects) {
-			if (this.selection.selectedIds.has(object.id)) {
+			if (objectIds.has(object.id)) {
 				this.moveObjectByOffset(object, offset);
 			}
 		}

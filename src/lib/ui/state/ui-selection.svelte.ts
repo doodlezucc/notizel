@@ -25,6 +25,7 @@ export class UISelection {
 	}
 
 	set(selectedIds: Iterable<ID>) {
+		this.#pivotId = null;
 		this.#selectedIds.clear();
 
 		for (const id of selectedIds) {

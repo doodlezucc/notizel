@@ -22,6 +22,8 @@
 
 	interface DraggingContext {
 		previousPointer: Vector;
+		totalOffset: Vector;
+		hasMovedAtAll: boolean;
 	}
 
 	let activeDragging: DraggingContext | undefined;
@@ -32,7 +34,9 @@
 		ev.preventDefault();
 
 		activeDragging = {
-			previousPointer: { x: ev.screenX, y: ev.screenY }
+			previousPointer: { x: ev.screenX, y: ev.screenY },
+			totalOffset: { x: 0, y: 0 },
+			hasMovedAtAll: false
 		};
 
 		if (!isSelected) {
@@ -49,11 +53,20 @@
 		const offset = Vectors.scale(pointerDelta, 1 / ui.canvas.camera.scale);
 
 		ui.moveSelectionByOffset(offset);
-		activeDragging.previousPointer = pointer;
+
+		activeDragging = {
+			previousPointer: pointer,
+			totalOffset: Vectors.add(activeDragging.totalOffset, offset),
+			hasMovedAtAll: true
+		};
 	}
 
 	function onPointerUp() {
 		if (!activeDragging) return;
+
+		if (activeDragging.hasMovedAtAll) {
+			ui.submitMoveSelectionByOffset(activeDragging.totalOffset);
+		}
 
 		activeDragging = undefined;
 	}
