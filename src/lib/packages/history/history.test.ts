@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest';
-import { type ChangeDescription, ChangeHistory } from './history';
+import { type ChangeDescription, ChangeHistory, type DoContext } from './history';
 
 test('Run history thingy', () => {
 	const history = new ChangeHistory();
@@ -15,7 +15,7 @@ test('Run history thingy', () => {
 
 	history.execute('Add thing', changeDo);
 
-	expect(changeDo).toHaveBeenCalledOnce();
+	expect(changeDo).toHaveBeenCalledExactlyOnceWith<[DoContext]>({ isRedo: false });
 	expect(changeUndo).not.toHaveBeenCalled();
 
 	expect(history.undo()).toEqual<ChangeDescription>({ message: 'Add thing' });
@@ -28,5 +28,6 @@ test('Run history thingy', () => {
 	expect(history.redo()).toBeNull();
 
 	expect(changeDo).toHaveBeenCalledTimes(2);
+	expect(changeDo).toHaveBeenLastCalledWith<[DoContext]>({ isRedo: true });
 	expect(changeUndo).toHaveBeenCalledOnce();
 });

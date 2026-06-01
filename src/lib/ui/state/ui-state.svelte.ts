@@ -49,7 +49,9 @@ export class UICanvasState {
 
 		if (!textObject) return;
 
-		const textContent = $state.snapshot(textObject.content);
+		const objectSnapshot = $state.snapshot(textObject);
+
+		const textContent = objectSnapshot.content;
 		if (isTipTapContentEmpty(textContent)) {
 			// Auto-delete empty text area
 
@@ -58,11 +60,32 @@ export class UICanvasState {
 				this.selection.deselect(objectId);
 				this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== objectId);
 			} else {
-				// TODO: Register deletion in history
+				this.#canvasHistory.execute('Remove empty text area', () => {
+					this.selection.deselect(objectId);
+					this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== objectId);
+
+					return () => {
+						this.#canvas.objects.push({
+							...objectSnapshot,
+							content: scope.originalContent
+						});
+						this.selection.select(objectId, { deselectOthers: false });
+					};
+				});
 			}
 		} else {
 			if (wasJustCreated) {
-				// TODO: Register creation in history
+				this.#canvasHistory.execute('Add text area', ({ isRedo }) => {
+					if (isRedo) {
+						this.#canvas.objects.push(objectSnapshot);
+						this.selection.select(objectId, { deselectOthers: false });
+					}
+
+					return () => {
+						this.selection.deselect(objectId);
+						this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== objectId);
+					};
+				});
 			}
 		}
 	}
@@ -90,12 +113,6 @@ export class UICanvasState {
 			wasJustCreated: true,
 			originalContent: ''
 		};
-
-		// 	return () => {
-		// 		this.selection.deselect(newObjectId);
-		// 		this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== newObjectId);
-		// 	};
-		// });
 	}
 
 	moveSelectionByOffset(offset: Vector) {

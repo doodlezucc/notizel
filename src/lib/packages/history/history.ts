@@ -1,4 +1,8 @@
-export type Change = () => () => void;
+export interface DoContext {
+	isRedo: boolean;
+}
+
+export type Change = (context: DoContext) => () => void;
 
 export interface ChangeDescription {
 	message: string;
@@ -28,7 +32,7 @@ export class ChangeHistory {
 	}
 
 	execute(message: string, change: Change) {
-		const revert = change();
+		const revert = change({ isRedo: false });
 		this.pastCommits.push({ message, change, revert });
 
 		// Clear redo stack
@@ -55,7 +59,7 @@ export class ChangeHistory {
 			return null;
 		}
 
-		const revert = commit.change();
+		const revert = commit.change({ isRedo: true });
 		this.pastCommits.push({ ...commit, revert });
 
 		return { message: commit.message };
