@@ -69,7 +69,7 @@ export class UICanvasState {
 							...objectSnapshot,
 							content: scope.originalContent
 						});
-						this.selection.select(objectId, { deselectOthers: false });
+						this.selection.select(objectId, { deselectOthers: true });
 					};
 				});
 			}
@@ -78,11 +78,11 @@ export class UICanvasState {
 				this.#canvasHistory.execute('Add text area', ({ isRedo }) => {
 					if (isRedo) {
 						this.#canvas.objects.push(objectSnapshot);
-						this.selection.select(objectId, { deselectOthers: false });
+						this.selection.set([objectId]);
 					}
 
 					return () => {
-						this.selection.deselect(objectId);
+						this.selection.clear();
 						this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== objectId);
 					};
 				});
@@ -154,13 +154,26 @@ export class UICanvasState {
 	}
 
 	deleteSelection() {
-		const idsToRemove = new Set(this.selection.selectedIds);
-		if (idsToRemove.size === 0) {
+		const affectedIds = new Set(this.selection.selectedIds);
+		if (affectedIds.size === 0) {
 			return;
 		}
 
+		const message = affectedIds.size === 1 ? 'Remove object' : `Remove ${affectedIds.size} objects`;
+		const affectedObjects = $state.snapshot(
+			this.#canvas.objects.filter((object) => affectedIds.has(object.id))
+		);
+
 		this.stopEditing();
-		this.selection.clear();
-		this.#canvas.objects = this.#canvas.objects.filter((object) => !idsToRemove.has(object.id));
+
+		this.#canvasHistory.execute(message, () => {
+			this.selection.clear();
+			this.#canvas.objects = this.#canvas.objects.filter((object) => !affectedIds.has(object.id));
+
+			return () => {
+				this.selection.set(affectedIds);
+				this.#canvas.objects.push(...affectedObjects);
+			};
+		});
 	}
 }
