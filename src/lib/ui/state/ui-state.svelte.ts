@@ -164,8 +164,6 @@ export class UICanvasState {
 			this.#canvas.objects.filter((object) => affectedIds.has(object.id))
 		);
 
-		this.stopEditing();
-
 		this.#canvasHistory.execute(message, () => {
 			this.selection.clear();
 			this.#canvas.objects = this.#canvas.objects.filter((object) => !affectedIds.has(object.id));
