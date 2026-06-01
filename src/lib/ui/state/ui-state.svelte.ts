@@ -1,7 +1,8 @@
 import { Vectors, type Vector } from '$lib/data/common';
 import type { CanvasFileData, CanvasObject } from '$lib/data/vault';
 import { ChangeHistory } from '$lib/packages/history';
-import type { UIEditingScope } from './ui-editing-scope';
+import { isTipTapContentEmpty } from '$lib/util/tiptap-is-empty';
+import type { UIEditingScope, UITextAreaEditingScope } from './ui-editing-scope';
 import { UISelection } from './ui-selection.svelte';
 
 export class UICanvasState {
@@ -35,7 +36,35 @@ export class UICanvasState {
 	}
 
 	stopEditing() {
+		if (this.#editingScope?.type === 'text') {
+			this.onExitTextAreaScope(this.#editingScope);
+		}
+
 		this.#editingScope = null;
+	}
+
+	private onExitTextAreaScope(scope: UITextAreaEditingScope) {
+		const { objectId, wasJustCreated } = scope;
+		const textObject = this.#canvas.objects.find((object) => object.id === objectId);
+
+		if (!textObject) return;
+
+		const textContent = $state.snapshot(textObject.content);
+		if (isTipTapContentEmpty(textContent)) {
+			// Auto-delete empty text area
+
+			if (wasJustCreated) {
+				// Delete without notifying history stack
+				this.selection.deselect(objectId);
+				this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== objectId);
+			} else {
+				// TODO: Register deletion in history
+			}
+		} else {
+			if (wasJustCreated) {
+				// TODO: Register creation in history
+			}
+		}
 	}
 
 	startEditing(scope: UIEditingScope) {
@@ -43,25 +72,30 @@ export class UICanvasState {
 	}
 
 	addTextAreaObject(center: Vector) {
-		this.#canvasHistory.execute('Add text area', () => {
-			const newObjectId = crypto.randomUUID(); // Maybe swap this out with a simple incremental ID
+		const newObjectId = crypto.randomUUID(); // Maybe swap this out with a simple incremental ID
 
-			this.#canvas.objects.push({
-				id: newObjectId,
-				type: 'text',
-				content: '',
-				alignH: 'center',
-				alignV: 'center',
-				anchor: center
-			});
-			this.selection.select(newObjectId, { deselectOthers: true });
-			this.#editingScope = { type: 'text', objectId: newObjectId };
-
-			return () => {
-				this.selection.deselect(newObjectId);
-				this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== newObjectId);
-			};
+		this.#canvas.objects.push({
+			id: newObjectId,
+			type: 'text',
+			content: '',
+			alignH: 'center',
+			alignV: 'center',
+			anchor: center
 		});
+		this.selection.select(newObjectId, { deselectOthers: true });
+
+		this.#editingScope = {
+			type: 'text',
+			objectId: newObjectId,
+			wasJustCreated: true,
+			originalContent: ''
+		};
+
+		// 	return () => {
+		// 		this.selection.deselect(newObjectId);
+		// 		this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== newObjectId);
+		// 	};
+		// });
 	}
 
 	moveSelectionByOffset(offset: Vector) {

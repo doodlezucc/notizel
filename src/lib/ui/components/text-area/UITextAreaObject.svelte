@@ -15,7 +15,9 @@
 	const ui = useUI();
 
 	let textArea = $state() as TextAreaObject;
-	let isEditing = $derived(ui.editingScope?.objectId === object.id);
+	let isEditing = $derived(
+		ui.editingScope?.type === 'text' && ui.editingScope.objectId === object.id
+	);
 
 	let isSelected = $derived(ui.selection.selectedIds.has(object.id));
 
@@ -37,7 +39,12 @@
 		ev.preventDefault();
 
 		if (!isEditing) {
-			ui.startEditing({ type: 'text', objectId: object.id });
+			ui.startEditing({
+				type: 'text',
+				objectId: object.id,
+				wasJustCreated: false,
+				originalContent: $state.snapshot(object.content)
+			});
 		}
 	}
 

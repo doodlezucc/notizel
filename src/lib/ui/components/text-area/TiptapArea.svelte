@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Editor, type Content } from '@tiptap/core';
 	import { StarterKit } from '@tiptap/starter-kit';
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
 
 	interface Props {
 		content: Content;
@@ -36,8 +36,15 @@
 			extensions: [StarterKit],
 			content,
 			onTransaction: ({ editor }) => {
-				// Increment the state signal to force a re-render
-				editorState = { editor };
+				// onTransaction may be triggered via a DOM event (e.g. focus, blur),
+				// which itself may have been called by synchronous state changes in a
+				// $derived block or similar.
+				//
+				// Explicitly untracking here fixes a console error after auto-deleting
+				// empty text area objects.
+				untrack(() => {
+					editorState = { editor }; // Force a re-render
+				});
 			},
 			onUpdate: ({ editor }) => {
 				content = editor.getJSON();
