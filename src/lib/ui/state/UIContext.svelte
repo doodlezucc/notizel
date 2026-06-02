@@ -16,26 +16,7 @@
 
 	let { children }: Props = $props();
 
-	const uiCanvasState = new UICanvasState({
-		camera: {
-			position: { x: 0, y: 0 },
-			scale: 1
-		},
-		objects: [
-			{
-				id: 'whatevs',
-				type: 'text',
-				content: `
-					<h1>notizel</h1>
-					<p>Note taking and doodling.</p>
-				`,
-				anchor: { x: 0, y: 0 },
-				alignH: 'justify',
-				alignV: 'bottom',
-				fixedWidth: 400
-			}
-		]
-	});
+	const uiCanvasState = new UICanvasState();
 
 	setContext<UICanvasState>(CONTEXT_KEY, uiCanvasState);
 </script>

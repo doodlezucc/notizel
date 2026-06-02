@@ -1,22 +1,22 @@
-import { Vectors, type ID, type Vector } from '$lib/data/common';
-import type { CanvasFileData, CanvasObject } from '$lib/data/vault';
+import { Vectors, type CameraTransform, type ID, type Vector } from '$lib/data/common';
 import { ChangeHistory } from '$lib/packages/history';
-import { isTipTapContentEmpty } from '$lib/util/tiptap-is-empty';
+import { createTextAreaEditor, type LiveCanvasObject } from './live-objects';
 import type { UIEditingScope, UITextAreaEditingScope } from './ui-editing-scope';
 import { UISelection } from './ui-selection.svelte';
 
 export class UICanvasState {
-	#canvas = $state() as CanvasFileData;
-	#editingScope = $state(null) as UIEditingScope | null;
+	#camera = $state<CameraTransform>({
+		position: { x: 0, y: 0 },
+		scale: 1
+	});
+	#objects = $state<LiveCanvasObject[]>([]);
+	#editingScope = $state<UIEditingScope | null>(null);
 
 	#canvasHistory = new ChangeHistory();
 	readonly selection = new UISelection();
 
-	constructor(canvas: CanvasFileData) {
-		this.#canvas = canvas;
-	}
-
-	readonly canvas = $derived(this.#canvas);
+	readonly camera = $derived(this.#camera);
+	readonly objects = $derived(this.#objects);
 	readonly editingScope = $derived(this.#editingScope);
 
 	private get focusedHistory(): ChangeHistory | null {
@@ -45,30 +45,24 @@ export class UICanvasState {
 
 	private onExitTextAreaScope(scope: UITextAreaEditingScope) {
 		const { objectId, wasJustCreated } = scope;
-		const textObject = this.#canvas.objects.find((object) => object.id === objectId);
+		const textObject = this.#objects.find((object) => object.id === objectId);
 
 		if (!textObject) return;
 
-		const objectSnapshot = $state.snapshot(textObject);
-
-		const textContent = objectSnapshot.content;
-		if (isTipTapContentEmpty(textContent)) {
+		if (textObject.editor.isEmpty) {
 			// Auto-delete empty text area
 
 			if (wasJustCreated) {
 				// Delete without notifying history stack
 				this.selection.deselect(objectId);
-				this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== objectId);
+				this.#objects = this.#objects.filter((object) => object.id !== objectId);
 			} else {
 				this.#canvasHistory.execute('Remove empty text area', () => {
 					this.selection.deselect(objectId);
-					this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== objectId);
+					this.#objects = this.#objects.filter((object) => object.id !== objectId);
 
 					return () => {
-						this.#canvas.objects.push({
-							...objectSnapshot,
-							content: scope.originalContent
-						});
+						this.#objects.push(textObject);
 						this.selection.select(objectId, { deselectOthers: true });
 					};
 				});
@@ -77,13 +71,13 @@ export class UICanvasState {
 			if (wasJustCreated) {
 				this.#canvasHistory.execute('Add text area', ({ isRedo }) => {
 					if (isRedo) {
-						this.#canvas.objects.push(objectSnapshot);
+						this.#objects.push(textObject);
 						this.selection.set([objectId]);
 					}
 
 					return () => {
 						this.selection.clear();
-						this.#canvas.objects = this.#canvas.objects.filter((object) => object.id !== objectId);
+						this.#objects = this.#objects.filter((object) => object.id !== objectId);
 					};
 				});
 			}
@@ -97,10 +91,10 @@ export class UICanvasState {
 	addTextAreaObject(center: Vector) {
 		const newObjectId = crypto.randomUUID(); // Maybe swap this out with a simple incremental ID
 
-		this.#canvas.objects.push({
+		this.#objects.push({
 			id: newObjectId,
 			type: 'text',
-			content: '',
+			editor: createTextAreaEditor(''),
 			alignH: 'center',
 			alignV: 'center',
 			anchor: center
@@ -138,14 +132,14 @@ export class UICanvasState {
 	}
 
 	private moveObjectsByOffset(objectIds: ReadonlySet<ID>, offset: Vector) {
-		for (const object of this.#canvas.objects) {
+		for (const object of this.#objects) {
 			if (objectIds.has(object.id)) {
 				this.moveObjectByOffset(object, offset);
 			}
 		}
 	}
 
-	private moveObjectByOffset(object: CanvasObject, offset: Vector) {
+	private moveObjectByOffset(object: LiveCanvasObject, offset: Vector) {
 		switch (object.type) {
 			case 'text':
 				object.anchor = Vectors.add(object.anchor, offset);
@@ -160,17 +154,15 @@ export class UICanvasState {
 		}
 
 		const message = affectedIds.size === 1 ? 'Remove object' : `Remove ${affectedIds.size} objects`;
-		const affectedObjects = $state.snapshot(
-			this.#canvas.objects.filter((object) => affectedIds.has(object.id))
-		);
+		const affectedObjects = this.#objects.filter((object) => affectedIds.has(object.id));
 
 		this.#canvasHistory.execute(message, () => {
 			this.selection.clear();
-			this.#canvas.objects = this.#canvas.objects.filter((object) => !affectedIds.has(object.id));
+			this.#objects = this.#objects.filter((object) => !affectedIds.has(object.id));
 
 			return () => {
 				this.selection.set(affectedIds);
-				this.#canvas.objects.push(...affectedObjects);
+				this.#objects.push(...affectedObjects);
 			};
 		});
 	}

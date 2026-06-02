@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TextCanvasObject } from '$lib/data/vault';
+	import type { LiveTextCanvasObject } from '$lib/ui/state/live-objects';
 	import { useUI } from '$lib/ui/state/UIContext.svelte';
 	import { untrack } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
@@ -7,7 +7,7 @@
 	import TextAreaObject from './TextAreaObject.svelte';
 
 	interface Props {
-		object: TextCanvasObject;
+		object: LiveTextCanvasObject;
 	}
 
 	let { object = $bindable() }: Props = $props();
@@ -43,7 +43,7 @@
 				type: 'text',
 				objectId: object.id,
 				wasJustCreated: false,
-				originalContent: $state.snapshot(object.content)
+				originalContent: $state.snapshot(object.editor.getJSON())
 			});
 		}
 	}
@@ -63,13 +63,13 @@
 	{#snippet content({ draggableEvents })}
 		<TextAreaObject
 			bind:this={textArea}
+			editor={object.editor}
 			{isSelected}
 			{isEditing}
 			computeSize={(rect) => ({
-				width: rect.width / ui.canvas.camera.scale,
-				height: rect.height / ui.canvas.camera.scale
+				width: rect.width / ui.camera.scale,
+				height: rect.height / ui.camera.scale
 			})}
-			bind:content={object.content}
 			bind:anchor={object.anchor}
 			bind:alignH={object.alignH}
 			bind:alignV={object.alignV}

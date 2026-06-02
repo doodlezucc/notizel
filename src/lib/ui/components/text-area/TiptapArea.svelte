@@ -1,61 +1,46 @@
 <script lang="ts">
-	import { Editor, type Content } from '@tiptap/core';
-	import { StarterKit } from '@tiptap/starter-kit';
+	import { Editor as TiptapEditor } from '@tiptap/core';
 	import { onDestroy, onMount, untrack } from 'svelte';
 
 	interface Props {
-		content: Content;
+		editor: TiptapEditor;
 		disableInteraction: boolean;
 	}
 
-	let { content = $bindable(), disableInteraction }: Props = $props();
+	let { editor, disableInteraction }: Props = $props();
 
-	interface EditorState {
-		editor: Editor;
-	}
-
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	let renderToken = $state.raw({});
 	let element = $state<HTMLElement>();
 
-	let editorState = $state.raw<EditorState>();
-	let editor = $derived(editorState?.editor);
-
 	$effect(() => {
-		if (editor && editor.isEditable !== !disableInteraction) {
+		if (editor.isEditable !== !disableInteraction) {
 			editor.setEditable(!disableInteraction);
 		}
 	});
 
 	export function focus() {
-		editor?.commands.focus();
-		editor?.commands.selectAll();
+		editor.commands.focus();
+		editor.commands.selectAll();
 	}
 
 	onMount(() => {
-		const editor = new Editor({
-			element: element,
-			extensions: [StarterKit],
-			content,
-			onTransaction: ({ editor }) => {
-				// onTransaction may be triggered via a DOM event (e.g. focus, blur),
-				// which itself may have been called by synchronous state changes in a
-				// $derived block or similar.
-				//
-				// Explicitly untracking here fixes a console error after auto-deleting
-				// empty text area objects.
-				untrack(() => {
-					editorState = { editor }; // Force a re-render
-				});
-			},
-			onUpdate: ({ editor }) => {
-				content = editor.getJSON();
-			}
+		editor.mount(element!);
+		editor.on('transaction', () => {
+			// onTransaction may be triggered via a DOM event (e.g. focus, blur),
+			// which itself may have been called by synchronous state changes in a
+			// $derived block or similar.
+			//
+			// Explicitly untracking here fixes a console error after auto-deleting
+			// empty text area objects.
+			untrack(() => {
+				renderToken = {}; // Force a re-render
+			});
 		});
-
-		editorState = { editor };
 	});
 
 	onDestroy(() => {
-		editorState?.editor.destroy();
+		editor.unmount();
 	});
 </script>
 

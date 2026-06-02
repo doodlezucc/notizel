@@ -1,20 +1,20 @@
 <script lang="ts">
 	import type { FixedWidthTextAlignment, Size, VerticalAlignment } from '$lib/data/common';
-	import type { TextCanvasObject } from '$lib/data/vault';
+	import type { LiveTextCanvasObject } from '$lib/ui/state/live-objects';
 	import ObjectAnchor, {
 		getHorizontalCenterOffsetFraction,
 		getVerticalCenterOffsetFraction
 	} from './ObjectAnchor.svelte';
 	import TiptapArea from './TiptapArea.svelte';
 
-	type Props = Omit<TextCanvasObject, 'id' | 'type'> & {
+	type Props = Omit<LiveTextCanvasObject, 'id' | 'type'> & {
 		isSelected: boolean;
 		isEditing: boolean;
 		computeSize?: (clientRect: DOMRect) => Size;
 	};
 
 	let {
-		content = $bindable(),
+		editor,
 		anchor = $bindable(),
 		alignH = $bindable(),
 		alignV = $bindable(),
@@ -86,7 +86,7 @@
 		class:editing={isEditing}
 		{...attachments}
 	>
-		<TiptapArea bind:this={tiptapArea} bind:content disableInteraction={!isEditing} />
+		<TiptapArea bind:this={tiptapArea} {editor} disableInteraction={!isEditing} />
 
 		<div class="tools">
 			<button onclick={switchAlignH}>{alignH}</button>

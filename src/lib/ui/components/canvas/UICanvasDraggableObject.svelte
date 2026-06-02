@@ -50,7 +50,7 @@
 		const pointer: Vector = { x: ev.screenX, y: ev.screenY };
 
 		const pointerDelta = Vectors.subtract(pointer, activeDragging.previousPointer);
-		const offset = Vectors.scale(pointerDelta, 1 / ui.canvas.camera.scale);
+		const offset = Vectors.scale(pointerDelta, 1 / ui.camera.scale);
 
 		ui.moveSelectionByOffset(offset);
 

@@ -10,7 +10,7 @@
 
 <EditorCanvasInputScope>
 	<InfiniteCanvas
-		bind:transform={ui.canvas.camera}
+		bind:transform={ui.camera}
 		onBackgroundTap={() => {
 			ui.stopEditing();
 			ui.selection.clear();
@@ -20,11 +20,11 @@
 		}}
 	>
 		{#snippet background()}
-			<EditorCanvasBackground transform={ui.canvas.camera} />
+			<EditorCanvasBackground transform={ui.camera} />
 		{/snippet}
 
-		{#each ui.canvas.objects as object, index (object.id)}
-			<UITextAreaObject bind:object={ui.canvas.objects[index]} />
+		{#each ui.objects as object, index (object.id)}
+			<UITextAreaObject bind:object={ui.objects[index]} />
 		{/each}
 	</InfiniteCanvas>
 </EditorCanvasInputScope>
