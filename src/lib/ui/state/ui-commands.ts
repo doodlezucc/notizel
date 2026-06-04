@@ -1,7 +1,8 @@
 import { Vectors, type ID, type Vector } from '$lib/data/common';
 import { ChangeHistory, type Change } from '$lib/packages/history';
 import type { OmitFromUnion } from '$lib/util/types';
-import { createTextAreaEditor, type LiveTextCanvasObject } from './live-objects';
+import { type LiveTextCanvasObject } from './live-objects';
+import { createTiptapEditor } from './tiptap/editor';
 import { UIGeneralEditingScope, UITextAreaEditingScope } from './ui-editing-scope.svelte';
 import type { UIState } from './ui-state.svelte';
 
@@ -28,7 +29,10 @@ export class UICommands {
 			...props,
 			id: objectId,
 			type: 'text',
-			editor: createTextAreaEditor('')
+			editor: createTiptapEditor({
+				initialContent: '',
+				registerHistoryChange: (change) => this.history.execute('Edit text', change)
+			})
 		};
 
 		const previousScope = this.ui.editingScope;

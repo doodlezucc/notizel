@@ -21,25 +21,27 @@
 
 	export function focus() {
 		editor.commands.focus();
-		editor.commands.selectAll();
+	}
+
+	function onTiptapTransaction() {
+		// onTransaction may be triggered via a DOM event (e.g. focus, blur),
+		// which itself may have been called by synchronous state changes in a
+		// $derived block or similar.
+		//
+		// Explicitly untracking here fixes a console error after auto-deleting
+		// empty text area objects.
+		untrack(() => {
+			renderToken = {}; // Force a re-render
+		});
 	}
 
 	onMount(() => {
 		editor.mount(element!);
-		editor.on('transaction', () => {
-			// onTransaction may be triggered via a DOM event (e.g. focus, blur),
-			// which itself may have been called by synchronous state changes in a
-			// $derived block or similar.
-			//
-			// Explicitly untracking here fixes a console error after auto-deleting
-			// empty text area objects.
-			untrack(() => {
-				renderToken = {}; // Force a re-render
-			});
-		});
+		editor.on('transaction', onTiptapTransaction);
 	});
 
 	onDestroy(() => {
+		editor.off('transaction', onTiptapTransaction);
 		editor.unmount();
 	});
 </script>

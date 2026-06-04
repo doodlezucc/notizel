@@ -32,6 +32,7 @@ export class ChangeHistory {
 	}
 
 	execute(message: string, change: Change) {
+		console.log(message);
 		const revert = change({ isRedo: false });
 		this.pastCommits.push({ message, change, revert });
 
