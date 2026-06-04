@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { useUI } from '$lib/ui/state/UIContext.svelte';
+	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import type { Snippet } from 'svelte';
 	import { InputSet } from 'svelte-input-system';
 
@@ -28,18 +28,18 @@
 	CanvasInputSet.state
 		.conditional(() => ui.editingScope === null)
 		.actions.delete.handleDown(() => {
-			ui.deleteSelection();
+			ui.commands.deleteSelection();
 		});
 
 	CanvasInputSet.state.actions.undo.handleDown(() => {
-		const change = ui.undo();
+		const change = ui.commands.undo();
 
 		if (change) {
 			console.log(`Undo "${change.message}"`);
 		}
 	});
 	CanvasInputSet.state.actions.redo.handleDown(() => {
-		const change = ui.redo();
+		const change = ui.commands.redo();
 
 		if (change) {
 			console.log(`Redo "${change.message}"`);

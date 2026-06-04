@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Vectors, type ID, type Vector } from '$lib/data/common';
-	import { useUI } from '$lib/ui/state/UIContext.svelte';
+	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import { type Snippet } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 
@@ -40,7 +40,7 @@
 		};
 
 		if (!isSelected) {
-			ui.selection.select(objectId, { deselectOthers: !ev.shiftKey });
+			ui.commands.select(objectId, { deselectOthers: !ev.shiftKey });
 		}
 	}
 
@@ -52,7 +52,7 @@
 		const pointerDelta = Vectors.subtract(pointer, activeDragging.previousPointer);
 		const offset = Vectors.scale(pointerDelta, 1 / ui.camera.scale);
 
-		ui.moveSelectionByOffset(offset);
+		ui.commands.moveSelectionByOffset(offset);
 
 		activeDragging = {
 			previousPointer: pointer,
@@ -65,7 +65,7 @@
 		if (!activeDragging) return;
 
 		if (activeDragging.hasMovedAtAll) {
-			ui.submitMoveSelectionByOffset(activeDragging.totalOffset);
+			ui.commands.submitMoveSelectionByOffset(activeDragging.totalOffset);
 		}
 
 		activeDragging = undefined;

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { LiveTextCanvasObject } from '$lib/ui/state/live-objects';
-	import { useUI } from '$lib/ui/state/UIContext.svelte';
+	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import { untrack } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import UICanvasDraggableObject from '../canvas/UICanvasDraggableObject.svelte';
@@ -23,7 +23,7 @@
 
 	$effect(() => {
 		if (isEditing && !isSelected) {
-			ui.stopEditing();
+			ui.commands.exitScope();
 		}
 	});
 
@@ -39,11 +39,9 @@
 		ev.preventDefault();
 
 		if (!isEditing) {
-			ui.startEditing({
+			ui.commands.startEditing({
 				type: 'text',
-				objectId: object.id,
-				wasJustCreated: false,
-				originalContent: $state.snapshot(object.editor.getJSON())
+				objectId: object.id
 			});
 		}
 	}
@@ -70,6 +68,8 @@
 				width: rect.width / ui.camera.scale,
 				height: rect.height / ui.camera.scale
 			})}
+			// TODO: In the future, the TextAreaObject shouldn't have agency over these
+			// properties, as they will be controlled from a different place in the UI.
 			bind:anchor={object.anchor}
 			bind:alignH={object.alignH}
 			bind:alignV={object.alignV}

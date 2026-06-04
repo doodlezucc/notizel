@@ -1,7 +1,12 @@
 import type { ID } from '$lib/data/common';
 import { SvelteSet } from 'svelte/reactivity';
 
-export class UISelection {
+export interface ReadonlyUISelection {
+	readonly selectedIds: ReadonlySet<ID>;
+	readonly pivotId: ID | null;
+}
+
+export class UISelection implements ReadonlyUISelection {
 	#selectedIds = new SvelteSet<ID>();
 	#pivotId = $state<ID | null>(null);
 

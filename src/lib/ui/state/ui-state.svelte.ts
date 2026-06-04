@@ -1,138 +1,36 @@
 import { Vectors, type CameraTransform, type ID, type Vector } from '$lib/data/common';
-import { ChangeHistory } from '$lib/packages/history';
-import { createTextAreaEditor, type LiveCanvasObject } from './live-objects';
-import type { UIEditingScope, UITextAreaEditingScope } from './ui-editing-scope';
-import { UISelection } from './ui-selection.svelte';
+import { type LiveCanvasObject } from './live-objects';
+import { UICommands } from './ui-commands';
+import type { UIEditingScope } from './ui-editing-scope';
+import { UISelection, type ReadonlyUISelection } from './ui-selection.svelte';
 
-export class UICanvasState {
-	#camera = $state<CameraTransform>({
+export interface MutableUIState {
+	camera: CameraTransform;
+}
+
+export type SnapshotUIState = {
+	readonly objects: LiveCanvasObject[];
+	readonly editingScope: UIEditingScope | null;
+	readonly selection: ReadonlyUISelection;
+};
+
+export type UIContext = MutableUIState &
+	SnapshotUIState & {
+		readonly commands: UICommands;
+	};
+
+export class UIState {
+	camera = $state<CameraTransform>({
 		position: { x: 0, y: 0 },
 		scale: 1
 	});
-	#objects = $state<LiveCanvasObject[]>([]);
-	#editingScope = $state<UIEditingScope | null>(null);
+	objects = $state<LiveCanvasObject[]>([]);
+	editingScope = $state<UIEditingScope | null>(null);
 
-	#canvasHistory = new ChangeHistory();
 	readonly selection = new UISelection();
 
-	readonly camera = $derived(this.#camera);
-	readonly objects = $derived(this.#objects);
-	readonly editingScope = $derived(this.#editingScope);
-
-	private get focusedHistory(): ChangeHistory | null {
-		if (this.#editingScope === null) {
-			return this.#canvasHistory;
-		} else {
-			return null;
-		}
-	}
-
-	undo() {
-		return this.focusedHistory?.undo() ?? null;
-	}
-
-	redo() {
-		return this.focusedHistory?.redo() ?? null;
-	}
-
-	stopEditing() {
-		if (this.#editingScope?.type === 'text') {
-			this.onExitTextAreaScope(this.#editingScope);
-		}
-
-		this.#editingScope = null;
-	}
-
-	private onExitTextAreaScope(scope: UITextAreaEditingScope) {
-		const { objectId, wasJustCreated } = scope;
-		const textObject = this.#objects.find((object) => object.id === objectId);
-
-		if (!textObject) return;
-
-		if (textObject.editor.isEmpty) {
-			// Auto-delete empty text area
-
-			if (wasJustCreated) {
-				// Delete without notifying history stack
-				this.selection.deselect(objectId);
-				this.#objects = this.#objects.filter((object) => object.id !== objectId);
-			} else {
-				this.#canvasHistory.execute('Remove empty text area', () => {
-					this.selection.deselect(objectId);
-					this.#objects = this.#objects.filter((object) => object.id !== objectId);
-
-					return () => {
-						this.#objects.push(textObject);
-						this.selection.select(objectId, { deselectOthers: true });
-					};
-				});
-			}
-		} else {
-			if (wasJustCreated) {
-				this.#canvasHistory.execute('Add text area', ({ isRedo }) => {
-					if (isRedo) {
-						this.#objects.push(textObject);
-						this.selection.set([objectId]);
-					}
-
-					return () => {
-						this.selection.clear();
-						this.#objects = this.#objects.filter((object) => object.id !== objectId);
-					};
-				});
-			}
-		}
-	}
-
-	startEditing(scope: UIEditingScope) {
-		this.#editingScope = scope;
-	}
-
-	addTextAreaObject(center: Vector) {
-		const newObjectId = crypto.randomUUID(); // Maybe swap this out with a simple incremental ID
-
-		this.#objects.push({
-			id: newObjectId,
-			type: 'text',
-			editor: createTextAreaEditor(''),
-			alignH: 'center',
-			alignV: 'center',
-			anchor: center
-		});
-		this.selection.select(newObjectId, { deselectOthers: true });
-
-		this.#editingScope = {
-			type: 'text',
-			objectId: newObjectId,
-			wasJustCreated: true,
-			originalContent: ''
-		};
-	}
-
-	moveSelectionByOffset(offset: Vector) {
-		this.moveObjectsByOffset(this.selection.selectedIds, offset);
-	}
-
-	submitMoveSelectionByOffset(totalOffset: Vector) {
-		const affectedIds = new Set(this.selection.selectedIds);
-
-		const message = affectedIds.size === 1 ? 'Move object' : `Move ${affectedIds.size} objects`;
-
-		this.#canvasHistory.execute(message, ({ isRedo }) => {
-			if (isRedo) {
-				this.selection.set(affectedIds);
-				this.moveObjectsByOffset(affectedIds, totalOffset);
-			}
-
-			return () => {
-				this.selection.set(affectedIds);
-				this.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
-			};
-		});
-	}
-
-	private moveObjectsByOffset(objectIds: ReadonlySet<ID>, offset: Vector) {
-		for (const object of this.#objects) {
+	moveObjectsByOffset(objectIds: ReadonlySet<ID>, offset: Vector) {
+		for (const object of this.objects) {
 			if (objectIds.has(object.id)) {
 				this.moveObjectByOffset(object, offset);
 			}
@@ -145,25 +43,5 @@ export class UICanvasState {
 				object.anchor = Vectors.add(object.anchor, offset);
 				return;
 		}
-	}
-
-	deleteSelection() {
-		const affectedIds = new Set(this.selection.selectedIds);
-		if (affectedIds.size === 0) {
-			return;
-		}
-
-		const message = affectedIds.size === 1 ? 'Remove object' : `Remove ${affectedIds.size} objects`;
-		const affectedObjects = this.#objects.filter((object) => affectedIds.has(object.id));
-
-		this.#canvasHistory.execute(message, () => {
-			this.selection.clear();
-			this.#objects = this.#objects.filter((object) => !affectedIds.has(object.id));
-
-			return () => {
-				this.selection.set(affectedIds);
-				this.#objects.push(...affectedObjects);
-			};
-		});
 	}
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useUI } from '$lib/ui/state/UIContext.svelte';
+	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import UITextAreaObject from '../text-area/UITextAreaObject.svelte';
 	import EditorCanvasBackground from './EditorCanvasBackground.svelte';
 	import EditorCanvasInputScope from './EditorCanvasInputScope.svelte';
@@ -12,11 +12,14 @@
 	<InfiniteCanvas
 		bind:transform={ui.camera}
 		onBackgroundTap={() => {
-			ui.stopEditing();
-			ui.selection.clear();
+			ui.commands.exitScope();
 		}}
 		onBackgroundDoubleTap={(ev) => {
-			ui.addTextAreaObject(ev.pointerInCanvasSpace);
+			ui.commands.createTextArea({
+				alignH: 'center',
+				alignV: 'center',
+				anchor: ev.pointerInCanvasSpace
+			});
 		}}
 	>
 		{#snippet background()}
