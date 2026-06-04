@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Vectors, type ID, type Vector } from '$lib/data/common';
+	import { UIGeneralEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import { type Snippet } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
@@ -18,7 +19,7 @@
 
 	const ui = useUI();
 
-	let isSelected = $derived(ui.selection.selectedIds.has(objectId));
+	let isSelected = $derived(ui.selectedIds.has(objectId));
 
 	interface DraggingContext {
 		previousPointer: Vector;
@@ -29,7 +30,7 @@
 	let activeDragging: DraggingContext | undefined;
 
 	function onPointerDown(ev: PointerEvent) {
-		if (ignoreDragging) return;
+		if (ignoreDragging || !(ui.editingScope instanceof UIGeneralEditingScope)) return;
 
 		ev.preventDefault();
 
@@ -40,7 +41,7 @@
 		};
 
 		if (!isSelected) {
-			ui.commands.select(objectId, { deselectOthers: !ev.shiftKey });
+			ui.commands.select([objectId], { deselectOthers: !ev.shiftKey });
 		}
 	}
 

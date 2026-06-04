@@ -12,7 +12,7 @@
 	<InfiniteCanvas
 		bind:transform={ui.camera}
 		onBackgroundTap={() => {
-			ui.commands.exitScope();
+			ui.commands.exitEditingScope();
 		}}
 		onBackgroundDoubleTap={(ev) => {
 			ui.commands.createTextArea({

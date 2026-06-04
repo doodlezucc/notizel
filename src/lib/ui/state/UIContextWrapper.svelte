@@ -1,7 +1,7 @@
 <script lang="ts" module>
-	import type { CameraTransform } from '$lib/data/common';
+	import type { CameraTransform, ID } from '$lib/data/common';
 	import { UICommands } from './ui-commands';
-	import type { ReadonlyUISelection } from './ui-selection.svelte';
+	import { UIGeneralEditingScope } from './ui-editing-scope.svelte';
 	import { type UIContext, UIState } from './ui-state.svelte';
 
 	const CONTEXT_KEY = Symbol();
@@ -13,12 +13,10 @@
 	class UIContextImpl implements UIContext {
 		private readonly ui: UIState;
 
-		readonly selection: ReadonlyUISelection;
 		readonly commands: UICommands;
 
 		constructor(ui: UIState) {
 			this.ui = ui;
-			this.selection = ui.selection;
 			this.commands = new UICommands(ui);
 		}
 
@@ -32,6 +30,14 @@
 
 		readonly objects = $derived.by(() => this.ui.objects);
 		readonly editingScope = $derived.by(() => this.ui.editingScope);
+		readonly selectedIds = $derived.by<ReadonlySet<ID>>(() => {
+			const scope = this.editingScope;
+			if (scope instanceof UIGeneralEditingScope) {
+				return scope.selectedIds;
+			} else {
+				return new Set();
+			}
+		});
 	}
 </script>
 

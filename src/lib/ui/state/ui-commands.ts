@@ -1,8 +1,8 @@
 import { Vectors, type ID, type Vector } from '$lib/data/common';
-import { ChangeHistory } from '$lib/packages/history';
+import { ChangeHistory, type Change } from '$lib/packages/history';
 import type { OmitFromUnion } from '$lib/util/types';
 import { createTextAreaEditor, type LiveTextCanvasObject } from './live-objects';
-import type { UIEditingScope, UITextAreaEditingScope } from './ui-editing-scope';
+import { UIGeneralEditingScope, UITextAreaEditingScope } from './ui-editing-scope.svelte';
 import type { UIState } from './ui-state.svelte';
 
 export class UICommands {
@@ -31,35 +31,29 @@ export class UICommands {
 			editor: createTextAreaEditor('')
 		};
 
+		const previousScope = this.ui.editingScope;
+
 		this.history.execute('Add text area', () => {
 			this.ui.objects.push(newObject);
-			this.ui.selection.set([objectId]);
+			this.ui.editingScope = new UITextAreaEditingScope(objectId);
 
 			return () => {
-				this.ui.selection.clear();
+				this.ui.editingScope = previousScope;
 				this.ui.objects = this.ui.objects.filter((object) => object.id !== objectId);
 			};
 		});
 	}
 
-	/** Called when tapping empty space. */
-	exitScope() {
-		if (this.ui.editingScope) {
-			this.exitEditingScope();
-		} else {
-			this.ui.selection.clear();
+	exitEditingScope() {
+		const scope = this.ui.editingScope;
+		if (scope instanceof UITextAreaEditingScope) {
+			this.exitTextAreaScope(scope);
+		} else if (scope instanceof UIGeneralEditingScope) {
+			this.clearSelection();
 		}
 	}
 
-	private exitEditingScope() {
-		if (this.ui.editingScope?.type === 'text') {
-			this.onExitTextAreaScope(this.ui.editingScope);
-		}
-
-		this.ui.editingScope = null;
-	}
-
-	private onExitTextAreaScope(scope: UITextAreaEditingScope) {
+	private exitTextAreaScope(scope: UITextAreaEditingScope) {
 		const { objectId } = scope;
 		const textObject = this.ui.objects.find((object) => object.id === objectId);
 
@@ -68,51 +62,151 @@ export class UICommands {
 		if (textObject.editor.isEmpty) {
 			// Auto-delete empty text area
 
+			// Set last editor content to what it was just before clearing
+			textObject.editor.commands.undo();
+
 			this.history.execute('Remove empty text area', () => {
-				this.ui.selection.deselect(objectId);
+				this.ui.editingScope = new UIGeneralEditingScope([]);
 				this.ui.objects = this.ui.objects.filter((object) => object.id !== objectId);
 
 				return () => {
 					this.ui.objects.push(textObject);
-					this.ui.selection.select(objectId, { deselectOthers: true });
+					this.ui.editingScope = scope;
+				};
+			});
+		} else {
+			this.history.execute('Exit text editing', () => {
+				this.ui.editingScope = new UIGeneralEditingScope([objectId]);
+
+				return () => {
+					this.ui.editingScope = scope;
 				};
 			});
 		}
 	}
 
-	startEditing(scope: UIEditingScope) {
-		this.ui.editingScope = scope;
+	enterTextAreaEditingScope(textObjectId: ID) {
+		const previousScope = this.ui.editingScope;
+
+		this.history.execute('Enter text editing', () => {
+			this.ui.editingScope = new UITextAreaEditingScope(textObjectId);
+
+			return () => {
+				this.ui.editingScope = previousScope;
+			};
+		});
 	}
 
 	// TODO: Refactor into borrowed gesture handle
 	moveSelectionByOffset(offset: Vector) {
-		this.ui.moveObjectsByOffset(this.ui.selection.selectedIds, offset);
+		const scope = this.requireGeneralEditingScope();
+		this.ui.moveObjectsByOffset(scope.selectedIds, offset);
 	}
 
 	submitMoveSelectionByOffset(totalOffset: Vector) {
-		const affectedIds = new Set(this.ui.selection.selectedIds);
+		const scope = this.requireGeneralEditingScope();
+		const affectedIds = new Set(scope.selectedIds);
 
 		const message = affectedIds.size === 1 ? 'Move object' : `Move ${affectedIds.size} objects`;
 
 		this.history.execute(message, ({ isRedo }) => {
 			if (isRedo) {
-				this.ui.selection.set(affectedIds);
 				this.ui.moveObjectsByOffset(affectedIds, totalOffset);
 			}
 
 			return () => {
-				this.ui.selection.set(affectedIds);
 				this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
 			};
 		});
 	}
 
-	select(id: ID, { deselectOthers }: { deselectOthers: boolean }) {
-		this.ui.selection.select(id, { deselectOthers });
+	select(ids: Iterable<ID>, { deselectOthers }: { deselectOthers: boolean }) {
+		const idsToSelect = new Set(ids);
+
+		this.history.execute(
+			'Select',
+			this.createSelectionChange((currentSelection) => {
+				if (deselectOthers) {
+					return idsToSelect;
+				} else {
+					return currentSelection.union(idsToSelect);
+				}
+			})
+		);
+	}
+
+	toggleSelected(id: ID) {
+		this.history.execute(
+			'Toggle select',
+			this.createSelectionChange((currentSelection) => {
+				const newSelection = new Set(currentSelection);
+
+				if (!newSelection.delete(id)) {
+					// ID was not previously present in the set.
+					newSelection.add(id);
+				}
+
+				return newSelection;
+			})
+		);
+	}
+
+	private createSelectionChange(modifySelection: (set: ReadonlySet<ID>) => Set<ID>): Change {
+		const scope = this.requireGeneralEditingScope();
+		const previousSelection = new Set(scope.selectedIds);
+		const newSelection = modifySelection(scope.selectedIds);
+
+		return () => {
+			this.applySelection(newSelection);
+
+			return () => {
+				this.applySelection(previousSelection);
+			};
+		};
+	}
+
+	private applySelection(idSet: ReadonlySet<ID>) {
+		const scope = this.requireGeneralEditingScope();
+
+		const idsToRemove = scope.selectedIds.difference(idSet);
+
+		if (idsToRemove.size === scope.selectedIds.size) {
+			scope.selectedIds.clear();
+		} else {
+			for (const idToRemove of idsToRemove) {
+				scope.selectedIds.delete(idToRemove);
+			}
+		}
+
+		const idsToAdd = idSet.difference(scope.selectedIds);
+		for (const idToAdd of idsToAdd) {
+			scope.selectedIds.add(idToAdd);
+		}
+	}
+
+	private requireGeneralEditingScope(): UIGeneralEditingScope {
+		if (!(this.ui.editingScope instanceof UIGeneralEditingScope)) {
+			throw new Error('Selection is only possible in a general editing scope');
+		}
+		return this.ui.editingScope;
+	}
+
+	clearSelection() {
+		if (this.requireGeneralEditingScope().selectedIds.size === 0) {
+			// Nothing is selected
+			return;
+		}
+
+		this.history.execute(
+			'Deselect all',
+			this.createSelectionChange(() => new Set())
+		);
 	}
 
 	deleteSelection() {
-		const affectedIds = new Set(this.ui.selection.selectedIds);
+		const scope = this.requireGeneralEditingScope();
+
+		const affectedIds = new Set(scope.selectedIds);
 		if (affectedIds.size === 0) {
 			return;
 		}
@@ -121,12 +215,17 @@ export class UICommands {
 		const affectedObjects = this.ui.objects.filter((object) => affectedIds.has(object.id));
 
 		this.history.execute(message, () => {
-			this.ui.selection.clear();
+			const scope = this.requireGeneralEditingScope();
+			scope.selectedIds.clear();
 			this.ui.objects = this.ui.objects.filter((object) => !affectedIds.has(object.id));
 
 			return () => {
-				this.ui.selection.set(affectedIds);
+				const scope = this.requireGeneralEditingScope();
 				this.ui.objects.push(...affectedObjects);
+
+				for (const id of affectedIds) {
+					scope.selectedIds.add(id);
+				}
 			};
 		});
 	}

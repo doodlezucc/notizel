@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { LiveTextCanvasObject } from '$lib/ui/state/live-objects';
+	import { UITextAreaEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import { untrack } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
@@ -16,16 +17,10 @@
 
 	let textArea = $state() as TextAreaObject;
 	let isEditing = $derived(
-		ui.editingScope?.type === 'text' && ui.editingScope.objectId === object.id
+		ui.editingScope instanceof UITextAreaEditingScope && ui.editingScope.objectId === object.id
 	);
 
-	let isSelected = $derived(ui.selection.selectedIds.has(object.id));
-
-	$effect(() => {
-		if (isEditing && !isSelected) {
-			ui.commands.exitScope();
-		}
-	});
+	let isSelected = $derived(isEditing || ui.selectedIds.has(object.id));
 
 	$effect(() => {
 		if (isEditing) {
@@ -39,10 +34,7 @@
 		ev.preventDefault();
 
 		if (!isEditing) {
-			ui.commands.startEditing({
-				type: 'text',
-				objectId: object.id
-			});
+			ui.commands.enterTextAreaEditingScope(object.id);
 		}
 	}
 

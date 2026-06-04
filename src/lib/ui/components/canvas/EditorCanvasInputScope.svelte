@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	import { UIGeneralEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import type { Snippet } from 'svelte';
 	import { InputSet } from 'svelte-input-system';
@@ -26,7 +27,7 @@
 	const ui = useUI();
 
 	CanvasInputSet.state
-		.conditional(() => ui.editingScope === null)
+		.conditional(() => ui.editingScope instanceof UIGeneralEditingScope)
 		.actions.delete.handleDown(() => {
 			ui.commands.deleteSelection();
 		});

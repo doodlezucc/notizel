@@ -1,8 +1,7 @@
 import { Vectors, type CameraTransform, type ID, type Vector } from '$lib/data/common';
 import { type LiveCanvasObject } from './live-objects';
 import { UICommands } from './ui-commands';
-import type { UIEditingScope } from './ui-editing-scope';
-import { UISelection, type ReadonlyUISelection } from './ui-selection.svelte';
+import { UIGeneralEditingScope, type UIEditingScope } from './ui-editing-scope.svelte';
 
 export interface MutableUIState {
 	camera: CameraTransform;
@@ -11,7 +10,7 @@ export interface MutableUIState {
 export type SnapshotUIState = {
 	readonly objects: LiveCanvasObject[];
 	readonly editingScope: UIEditingScope | null;
-	readonly selection: ReadonlyUISelection;
+	readonly selectedIds: ReadonlySet<ID>;
 };
 
 export type UIContext = MutableUIState &
@@ -24,10 +23,9 @@ export class UIState {
 		position: { x: 0, y: 0 },
 		scale: 1
 	});
-	objects = $state<LiveCanvasObject[]>([]);
-	editingScope = $state<UIEditingScope | null>(null);
 
-	readonly selection = new UISelection();
+	objects = $state<LiveCanvasObject[]>([]);
+	editingScope = $state.raw<UIEditingScope>(new UIGeneralEditingScope([]));
 
 	moveObjectsByOffset(objectIds: ReadonlySet<ID>, offset: Vector) {
 		for (const object of this.objects) {
