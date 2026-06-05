@@ -6,6 +6,7 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	optimizeDeps: {
 		include: [
+			'@iconify/svelte',
 			'@tiptap/core',
 			'@tiptap/pm/history',
 			'@tiptap/starter-kit',
