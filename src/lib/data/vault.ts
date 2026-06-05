@@ -30,10 +30,15 @@ export type CanvasObject = TextCanvasObject;
 export type TextCanvasObject = {
 	id: ID;
 	type: 'text';
-	anchor: Vector;
 
 	content: TiptapContent;
+} & TextBoxLayout;
 
+export type TextBoxLayout = {
+	anchor: Vector;
+} & TextBoxAlignment;
+
+export type TextBoxAlignment = {
 	/** This only decides in what vertical direction to scale the box when adding new lines of text. */
 	alignV: VerticalAlignment;
 } & (

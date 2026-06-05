@@ -51,6 +51,9 @@
 
 <UICanvasDraggableObject objectId={object.id} ignoreDragging={isEditing}>
 	{#snippet content({ draggableEvents })}
+		<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
+		{@const { editor, id, type, ...layout } = object}
+
 		<TextAreaObject
 			bind:this={textArea}
 			editor={object.editor}
@@ -60,12 +63,9 @@
 				width: rect.width / ui.camera.scale,
 				height: rect.height / ui.camera.scale
 			})}
-			// TODO: In the future, the TextAreaObject shouldn't have agency over these
-			// properties, as they will be controlled from a different place in the UI.
-			bind:anchor={object.anchor}
-			bind:alignH={object.alignH}
-			bind:alignV={object.alignV}
-			bind:fixedWidth={object.fixedWidth}
+			bind:layout={
+				() => layout, (newLayout) => ui.commands.submitTextAreaLayout(object.id, newLayout)
+			}
 			{@attach draggableEvents}
 			{@attach createAttachment()}
 		/>

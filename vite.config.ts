@@ -10,6 +10,7 @@ export default defineConfig({
 			'@tiptap/pm/history',
 			'@tiptap/starter-kit',
 			'svelte-input-system',
+			'svelte-tether',
 			'temporal-polyfill'
 		]
 	},

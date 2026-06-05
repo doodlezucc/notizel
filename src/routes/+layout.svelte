@@ -3,6 +3,7 @@
 	import '@fontsource-variable/cascadia-code/wght.css';
 
 	import favicon from '$lib/assets/favicon.svg';
+	import { PortalOverlay } from 'svelte-tether';
 
 	let { children } = $props();
 </script>
@@ -11,4 +12,6 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-{@render children()}
+<PortalOverlay>
+	{@render children()}
+</PortalOverlay>

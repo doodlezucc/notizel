@@ -71,6 +71,9 @@ importers:
       svelte-input-system:
         specifier: ^0.2.0
         version: 0.2.0(svelte@5.55.10(@typescript-eslint/types@8.60.0))(typescript@6.0.3)
+      svelte-tether:
+        specifier: ^0.2.1
+        version: 0.2.1(svelte@5.55.10(@typescript-eslint/types@8.60.0))
       temporal-polyfill:
         specifier: ^0.3.2
         version: 0.3.2
@@ -1657,6 +1660,11 @@ packages:
 
   svelte-input-system@0.2.0:
     resolution: {integrity: sha512-t44volriRPWysznuPGhEQ6xfQhy0S3DinkY2OQ6eKgFNwQwEV2dezbiDSsX38lDwRoZ9I1B/6S8IubCXGUxFfw==}
+    peerDependencies:
+      svelte: ^5.0.0
+
+  svelte-tether@0.2.1:
+    resolution: {integrity: sha512-OrCdE9e+voSaeg6SxRQXZXDWH4J2L700O7YHC67LwntA/q83dTJ3BsF/WFwVN3SCIM8bKgacVUe/NZVq9xwcfg==}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -3332,6 +3340,10 @@ snapshots:
       ts-essentials: 10.2.1(typescript@6.0.3)
     transitivePeerDependencies:
       - typescript
+
+  svelte-tether@0.2.1(svelte@5.55.10(@typescript-eslint/types@8.60.0)):
+    dependencies:
+      svelte: 5.55.10(@typescript-eslint/types@8.60.0)
 
   svelte@5.55.10(@typescript-eslint/types@8.60.0):
     dependencies:

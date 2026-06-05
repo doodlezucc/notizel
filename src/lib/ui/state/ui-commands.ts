@@ -1,5 +1,5 @@
 import { Vectors, type ID, type Vector } from '$lib/data/common';
-import type { CanvasFileData, VaultFileMeta } from '$lib/data/vault';
+import type { CanvasFileData, TextBoxLayout, VaultFileMeta } from '$lib/data/vault';
 import { ChangeHistory, type Change } from '$lib/packages/history';
 import type { OmitFromUnion } from '$lib/util/types';
 import { Temporal } from 'temporal-polyfill';
@@ -186,6 +186,25 @@ export class UICommands {
 
 			return () => {
 				this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
+			};
+		});
+	}
+
+	submitTextAreaLayout(objectId: ID, layout: TextBoxLayout) {
+		const textObject = this.ui.objects.find((object) => object.id === objectId);
+
+		if (!textObject || textObject.type !== 'text') {
+			throw new Error('Object is not a text area');
+		}
+
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { id, type, editor, ...previousLayout } = textObject;
+
+		this.history.execute('Change textbox layout', () => {
+			Object.assign(textObject, layout);
+
+			return () => {
+				Object.assign(textObject, previousLayout);
 			};
 		});
 	}
