@@ -37,7 +37,7 @@
 		...attachments
 	}: Props = $props();
 
-	const { anchor, alignH, alignV, fixedWidth } = $derived(layout);
+	let { anchor, alignH, alignV, fixedWidth } = $derived(layout);
 
 	let tiptapArea = $state<TiptapArea>();
 	let container = $state<HTMLElement>();
@@ -80,8 +80,29 @@
 				};
 			} else {
 				if (previousAlignment === 'justify') {
-					// TODO: Remove fixed width if it's within a small threshold of the actual width
+					// When flicking through the available alignments, switching to a
+					// justified flow and then BACK to non-justified, the editor shouldn't
+					// do "invisible" changes.
+					//
+					// This does bear the potential to remove a user-configured fixed width,
+					// but IMO the "flicking through alignments" case is much more likely:
+					// The threshold for removing an existing fixed width is 0.01 PIXELS, it
+					// seems extremely rare for a user to accidentally resize the text box to be
+					// exactly what it would be if free-flowing.
+					container!.style.width = 'max-content';
+					const maxWidth = getRenderedSize().width;
+
+					container!.style.removeProperty('width');
+
+					const delta = Math.abs(maxWidth - fixedWidth!);
+					if (delta < 0.01) {
+						// The explicitly set fixed width is SIMILAR to what the text
+						// measures at when free-flowing. In this case, prefer resetting
+						// to an unconstrained width.
+						fixedWidth = undefined;
+					}
 				}
+
 				layout = {
 					anchor: {
 						x: anchor.x - (newCenterOffset - currentCenterOffset) * getRenderedSize().width,
@@ -89,7 +110,7 @@
 					},
 					alignH: alignment,
 					alignV: alignV,
-					fixedWidth: layout.fixedWidth
+					fixedWidth: fixedWidth
 				};
 			}
 		},
