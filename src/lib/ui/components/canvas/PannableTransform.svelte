@@ -98,6 +98,8 @@
 	}
 
 	function onWheel(ev: WheelEvent) {
+		ev.preventDefault();
+
 		const pivotOffsetInClientSpace = getPointerOffsetInClientSpace({
 			x: ev.clientX,
 			y: ev.clientY
