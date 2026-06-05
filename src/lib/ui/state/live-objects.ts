@@ -1,6 +1,6 @@
 import type { CanvasObject, TextCanvasObject } from '$lib/data/vault';
 import type { OmitFromUnion } from '$lib/util/types';
-import { Editor as TiptapEditor } from '@tiptap/core';
+import { Editor as TiptapEditor, type Content as TiptapContent } from '@tiptap/core';
 
 export type LiveCanvasObject = LiveTextCanvasObject;
 
@@ -10,16 +10,19 @@ export type LiveTextCanvasObject = OmitFromUnion<TextCanvasObject, 'content'> & 
 
 type ObjectType = CanvasObject['type'] & LiveCanvasObject['type'];
 
+export interface LiveObjectInstantiator {
+	createTiptapEditor: (initialContent: TiptapContent) => TiptapEditor;
+}
+
 export function unfreezeCanvasObject<T extends ObjectType>(
-	object: CanvasObject & { type: T }
+	object: CanvasObject & { type: T },
+	objectInstantiator: LiveObjectInstantiator
 ): LiveCanvasObject & { type: T } {
 	switch (object.type) {
 		case 'text':
 			return {
 				...object,
-				editor: new TiptapEditor({
-					content: object.content
-				})
+				editor: objectInstantiator.createTiptapEditor(object.content)
 			};
 	}
 }
@@ -28,10 +31,14 @@ export function freezeCanvasObject<T extends ObjectType>(
 	object: LiveCanvasObject & { type: T }
 ): CanvasObject & { type: T } {
 	switch (object.type) {
-		case 'text':
+		case 'text': {
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { editor, ...commonProps } = object;
+
 			return {
-				...object,
+				...commonProps,
 				content: object.editor.getJSON()
 			};
+		}
 	}
 }

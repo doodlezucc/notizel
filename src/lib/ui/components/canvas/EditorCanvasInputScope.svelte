@@ -6,13 +6,16 @@
 
 	export const CanvasInputSet = InputSet.stateful({
 		actions: {
-			delete: [{ logicalKey: 'Backspace' }, { logicalKey: 'Delete' }],
+			save: [{ logicalKey: 'S', modifiers: { ctrl: true } }, { logicalKey: 'Save' }],
+
 			undo: [{ logicalKey: 'Z', modifiers: { ctrl: true, shift: false } }, { logicalKey: 'Undo' }],
 			redo: [
 				{ logicalKey: 'Z', modifiers: { ctrl: true, shift: true } },
 				{ logicalKey: 'Y', modifiers: { ctrl: true } },
 				{ logicalKey: 'Redo' }
-			]
+			],
+
+			delete: [{ logicalKey: 'Backspace' }, { logicalKey: 'Delete' }]
 		}
 	});
 </script>
@@ -31,6 +34,10 @@
 		.actions.delete.handleDown(() => {
 			ui.commands.deleteSelection();
 		});
+
+	CanvasInputSet.state.actions.save.handleDown(() => {
+		ui.commands.saveFile();
+	});
 
 	CanvasInputSet.state.actions.undo.handleDownWithRepeats(() => {
 		const change = ui.commands.undo();

@@ -5,7 +5,13 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
 	plugins: [sveltekit()],
 	optimizeDeps: {
-		include: ['@tiptap/core', '@tiptap/pm/history', '@tiptap/starter-kit', 'svelte-input-system']
+		include: [
+			'@tiptap/core',
+			'@tiptap/pm/history',
+			'@tiptap/starter-kit',
+			'svelte-input-system',
+			'temporal-polyfill'
+		]
 	},
 	test: {
 		expect: { requireAssertions: true },

@@ -1,17 +1,86 @@
 import { Vectors, type ID, type Vector } from '$lib/data/common';
+import type { CanvasFileData, VaultFileMeta } from '$lib/data/vault';
 import { ChangeHistory, type Change } from '$lib/packages/history';
 import type { OmitFromUnion } from '$lib/util/types';
-import { type LiveTextCanvasObject } from './live-objects';
+import { Temporal } from 'temporal-polyfill';
+import type { DependencyStack } from './dependency-stack';
+import {
+	unfreezeCanvasObject,
+	type LiveObjectInstantiator,
+	type LiveTextCanvasObject
+} from './live-objects';
 import { createTiptapEditor } from './tiptap/editor';
 import { UIGeneralEditingScope, UITextAreaEditingScope } from './ui-editing-scope.svelte';
 import type { UIState } from './ui-state.svelte';
 
 export class UICommands {
 	private readonly ui: UIState;
+	private readonly dependencyStack: DependencyStack;
+
 	private history = new ChangeHistory();
 
-	constructor(ui: UIState) {
+	constructor(ui: UIState, dependencyStack: DependencyStack) {
 		this.ui = ui;
+		this.dependencyStack = dependencyStack;
+	}
+
+	private get persistence() {
+		return this.dependencyStack.persistence;
+	}
+
+	private readonly liveObjectInstantiator: LiveObjectInstantiator = {
+		createTiptapEditor: (initialContent) => {
+			return createTiptapEditor({
+				initialContent,
+				registerHistoryChange: (change) => this.history.execute('Edit text', change)
+			});
+		}
+	};
+
+	async saveFile() {
+		const now = Temporal.Now.instant();
+
+		if (!this.ui.fileMeta) {
+			const newFileId = this.persistence.generateFileId();
+
+			const meta: VaultFileMeta = {
+				id: newFileId,
+				createdAt: now,
+				modifiedAt: now,
+				name: 'Untitled'
+			};
+
+			await this.persistence.saveFileMeta(meta);
+			await this.persistence.saveFile(meta.id, this.ui.toFileData());
+			this.ui.vault.files.push(meta);
+			this.ui.fileMeta = meta;
+		} else {
+			const meta = this.ui.fileMeta;
+			meta.modifiedAt = now;
+			await this.persistence.saveFileMeta(meta);
+			await this.persistence.saveFile(meta.id, this.ui.toFileData());
+		}
+	}
+
+	async loadFile(fileId: ID) {
+		const fileMeta = this.ui.vault.files.find((file) => file.id === fileId);
+
+		if (!fileMeta) {
+			throw new Error('File meta to load by ID not available in vault');
+		}
+
+		const fileData = await this.persistence.loadFile(fileId);
+
+		this.applyFromFile(fileMeta, fileData);
+	}
+
+	private applyFromFile(meta: VaultFileMeta, data: CanvasFileData) {
+		this.ui.fileMeta = meta;
+		this.ui.camera = data.camera;
+		this.ui.objects = data.objects.map((object) =>
+			unfreezeCanvasObject(object, this.liveObjectInstantiator)
+		);
+		this.ui.editingScope = new UIGeneralEditingScope([]);
 	}
 
 	undo() {
@@ -29,10 +98,7 @@ export class UICommands {
 			...props,
 			id: objectId,
 			type: 'text',
-			editor: createTiptapEditor({
-				initialContent: '',
-				registerHistoryChange: (change) => this.history.execute('Edit text', change)
-			})
+			editor: this.liveObjectInstantiator.createTiptapEditor('')
 		};
 
 		const previousScope = this.ui.editingScope;

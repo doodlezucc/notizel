@@ -14,6 +14,7 @@ export interface Vault {
 }
 
 export interface VaultFileMeta {
+	id: ID;
 	name: string;
 	createdAt: Temporal.Instant;
 	modifiedAt: Temporal.Instant;

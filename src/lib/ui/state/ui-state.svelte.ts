@@ -1,5 +1,6 @@
 import { Vectors, type CameraTransform, type ID, type Vector } from '$lib/data/common';
-import { type LiveCanvasObject } from './live-objects';
+import type { CanvasFileData, Vault, VaultFileMeta } from '$lib/data/vault';
+import { freezeCanvasObject, type LiveCanvasObject } from './live-objects';
 import { UICommands } from './ui-commands';
 import { UIGeneralEditingScope, type UIEditingScope } from './ui-editing-scope.svelte';
 
@@ -8,6 +9,9 @@ export interface MutableUIState {
 }
 
 export type SnapshotUIState = {
+	readonly vault: Vault;
+	readonly fileMeta: VaultFileMeta | null;
+
 	readonly objects: LiveCanvasObject[];
 	readonly editingScope: UIEditingScope | null;
 	readonly selectedIds: ReadonlySet<ID>;
@@ -19,6 +23,9 @@ export type UIContext = MutableUIState &
 	};
 
 export class UIState {
+	vault = $state<Vault>({ files: [] });
+	fileMeta = $state<VaultFileMeta | null>(null);
+
 	camera = $state<CameraTransform>({
 		position: { x: 0, y: 0 },
 		scale: 1
@@ -26,6 +33,13 @@ export class UIState {
 
 	objects = $state<LiveCanvasObject[]>([]);
 	editingScope = $state.raw<UIEditingScope>(new UIGeneralEditingScope([]));
+
+	toFileData(): CanvasFileData {
+		return {
+			camera: $state.snapshot(this.camera),
+			objects: this.objects.map(freezeCanvasObject)
+		};
+	}
 
 	moveObjectsByOffset(objectIds: ReadonlySet<ID>, offset: Vector) {
 		for (const object of this.objects) {
