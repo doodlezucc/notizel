@@ -32,14 +32,14 @@
 			ui.commands.deleteSelection();
 		});
 
-	CanvasInputSet.state.actions.undo.handleDown(() => {
+	CanvasInputSet.state.actions.undo.handleDownWithRepeats(() => {
 		const change = ui.commands.undo();
 
 		if (change) {
 			console.log(`Undo "${change.message}"`);
 		}
 	});
-	CanvasInputSet.state.actions.redo.handleDown(() => {
+	CanvasInputSet.state.actions.redo.handleDownWithRepeats(() => {
 		const change = ui.commands.redo();
 
 		if (change) {
