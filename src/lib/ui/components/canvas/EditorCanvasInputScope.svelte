@@ -6,6 +6,8 @@
 
 	export const CanvasInputSet = InputSet.stateful({
 		actions: {
+			escape: [{ logicalKey: 'Escape' }],
+
 			save: [{ logicalKey: 'S', modifiers: { ctrl: true } }, { logicalKey: 'Save' }],
 
 			undo: [{ logicalKey: 'Z', modifiers: { ctrl: true, shift: false } }, { logicalKey: 'Undo' }],
@@ -37,6 +39,10 @@
 
 	CanvasInputSet.state.actions.save.handleDown(() => {
 		ui.commands.saveFile();
+	});
+
+	CanvasInputSet.state.actions.escape.handleDownWithRepeats(() => {
+		ui.commands.exitEditingScope();
 	});
 
 	CanvasInputSet.state.actions.undo.handleDownWithRepeats(() => {
