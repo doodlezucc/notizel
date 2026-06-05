@@ -132,7 +132,7 @@
 </script>
 
 <ObjectAnchor {anchor} {alignH} {alignV}>
-	<TextAreaToolbarWrapper alignment={layout} {controller}>
+	<TextAreaToolbarWrapper visible={isSelected || isEditing} alignment={layout} {controller}>
 		<div
 			class="text-area"
 			bind:this={container}

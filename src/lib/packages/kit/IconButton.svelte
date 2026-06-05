@@ -5,15 +5,22 @@
 
 	interface Props {
 		icon: string;
+		preventFocusOnClick?: boolean;
 		onClick?: () => void;
 		children: Snippet;
 	}
 
-	let { icon, onClick, children }: Props = $props();
+	let { icon, preventFocusOnClick = false, onClick, children }: Props = $props();
+
+	function handleMouseDown(ev: MouseEvent) {
+		if (preventFocusOnClick) {
+			ev.preventDefault();
+		}
+	}
 </script>
 
 <Tooltip title={children}>
-	<button onclick={onClick}>
+	<button onmousedown={handleMouseDown} onclick={onClick}>
 		<Icon {icon} />
 	</button>
 </Tooltip>

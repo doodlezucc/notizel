@@ -8,14 +8,15 @@
 	interface Props {
 		controller: TextAreaObjectController;
 		alignment: TextBoxAlignment;
+		visible: boolean;
 		children: Snippet;
 	}
 
-	let { controller, alignment, children }: Props = $props();
+	let { controller, alignment, visible, children }: Props = $props();
 </script>
 
 <Tether {children} origin="top-left" direction="bottom-left">
 	{#snippet portal()}
-		<TextAreaToolbar {controller} {alignment} />
+		<TextAreaToolbar {visible} {controller} {alignment} />
 	{/snippet}
 </Tether>
