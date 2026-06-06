@@ -2,6 +2,7 @@
 	import { Vectors, type ID, type Vector } from '$lib/data/common';
 	import {
 		AreaSelectGestureState,
+		type ControlledGestureHandle,
 		type ObjectTransformGestureHandle
 	} from '$lib/ui/state/gestures/gestures';
 	import type { MountedObject } from '$lib/ui/state/ui-dom-bridge';
@@ -29,7 +30,7 @@
 	let isSelected = $derived(ui.selectedIds.has(objectId));
 
 	interface DraggingContext {
-		gesture: ObjectTransformGestureHandle;
+		gesture: ControlledGestureHandle<ObjectTransformGestureHandle>;
 		previousPointer: Vector;
 		hasMovedAtAll: boolean;
 	}
@@ -70,7 +71,7 @@
 		if (!activeDragging) return;
 
 		if (activeDragging.hasMovedAtAll) {
-			activeDragging.gesture.submit();
+			activeDragging.gesture.complete();
 		} else {
 			activeDragging.gesture.cancel();
 		}

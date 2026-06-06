@@ -3,15 +3,18 @@ import {
 	AreaSelectGestureStateImpl,
 	type ObjectAreaSelectInformation
 } from '../gestures/area-select.svelte';
-import type {
-	AreaSelectGestureHandle,
-	GestureHandle,
-	ObjectTransformGestureHandle
+import {
+	createGesture,
+	type AreaSelectGestureHandle,
+	type ControlledGestureHandle,
+	type CreateGestureOptions,
+	type CreateHandleContext,
+	type ObjectTransformGestureHandle
 } from '../gestures/gestures';
 import { StackUser } from '../stack/stack-user';
 
 export class UICommandsGestures extends StackUser {
-	private activeGesture: GestureHandle | null = null;
+	private activeGesture: ControlledGestureHandle | null = null;
 
 	get hasActiveGesture() {
 		return this.activeGesture !== null;
@@ -45,47 +48,37 @@ export class UICommandsGestures extends StackUser {
 			}
 		}
 
-		let isDone = false;
-
 		const state = new AreaSelectGestureStateImpl(objects, initialPointer);
 		this.ui.activeGesture = state;
 
-		return this.startGesture<AreaSelectGestureHandle>({
-			updatePointerPosition: (currentPointer) => {
-				state.updateArea(AxisAlignedBoundingBox.fromPoints(initialPointer, currentPointer));
-			},
+		return this.startGesture<AreaSelectGestureHandle>(
+			(gesture) => ({
+				updatePointerPosition: (currentPointer) => {
+					if (gesture.isComplete()) return;
 
-			submit: () => {
-				if (isDone) return;
-				isDone = true;
-				this.activeGesture = null;
-				this.ui.activeGesture = null;
-
-				const objectIdsInArea = new Set(state.idsInArea);
-
-				const newSelection = deselectOthers
-					? objectIdsInArea
-					: objectIdsInArea.union(selectionAtStart);
-
-				if (newSelection.symmetricDifference(selectionAtStart).size > 0) {
-					this.history.execute('Area select', () => {
-						this.ui.applySelection(newSelection);
-
-						return () => {
-							this.ui.applySelection(selectionAtStart);
-						};
-					});
+					state.updateArea(AxisAlignedBoundingBox.fromPoints(initialPointer, currentPointer));
 				}
-			},
+			}),
+			{
+				onComplete: () => {
+					const objectIdsInArea = new Set(state.idsInArea);
 
-			cancel: () => {
-				if (isDone) return;
-				isDone = true;
+					const newSelection = deselectOthers
+						? objectIdsInArea
+						: objectIdsInArea.union(selectionAtStart);
 
-				this.activeGesture = null;
-				this.ui.activeGesture = null;
+					if (newSelection.symmetricDifference(selectionAtStart).size > 0) {
+						this.history.execute('Area select', () => {
+							this.ui.applySelection(newSelection);
+
+							return () => {
+								this.ui.applySelection(selectionAtStart);
+							};
+						});
+					}
+				}
 			}
-		});
+		);
 	}
 
 	startMovingSelectedObjects() {
@@ -93,48 +86,62 @@ export class UICommandsGestures extends StackUser {
 		const affectedIds = new Set(scope.selectedIds);
 
 		let totalOffset: Vector = { x: 0, y: 0 };
-		let isGestureDone = false;
 
-		return this.startGesture<ObjectTransformGestureHandle>({
-			moveObjectsBy: (offset) => {
-				if (isGestureDone) return;
+		return this.startGesture<ObjectTransformGestureHandle>(
+			(gesture) => ({
+				moveObjectsBy: (offset) => {
+					if (gesture.isComplete()) return;
 
-				this.ui.moveObjectsByOffset(affectedIds, offset);
-				totalOffset = Vectors.add(totalOffset, offset);
-			},
+					this.ui.moveObjectsByOffset(affectedIds, offset);
+					totalOffset = Vectors.add(totalOffset, offset);
+				}
+			}),
+			{
+				onComplete: () => {
+					const message =
+						affectedIds.size === 1 ? 'Move object' : `Move ${affectedIds.size} objects`;
 
-			submit: () => {
-				if (isGestureDone) return;
-				isGestureDone = true;
-				this.activeGesture = null;
+					this.history.execute(message, ({ isRedo }) => {
+						if (isRedo) {
+							this.ui.moveObjectsByOffset(affectedIds, totalOffset);
+						}
 
-				const message = affectedIds.size === 1 ? 'Move object' : `Move ${affectedIds.size} objects`;
+						return () => {
+							this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
+						};
+					});
+				},
 
-				this.history.execute(message, ({ isRedo }) => {
-					if (isRedo) {
-						this.ui.moveObjectsByOffset(affectedIds, totalOffset);
-					}
-
-					return () => {
-						this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
-					};
-				});
-			},
-
-			cancel: () => {
-				if (isGestureDone) return;
-				isGestureDone = true;
-				this.activeGesture = null;
-
-				this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
+				onCancel: () => {
+					this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
+				}
 			}
-		});
+		);
 	}
 
-	private startGesture<T extends GestureHandle>(gesture: T): T {
+	private startGesture<T>(
+		createHandle: (context: CreateHandleContext) => T,
+		options: CreateGestureOptions = {}
+	): ControlledGestureHandle<T> {
 		if (this.activeGesture) {
 			throw new Error('A different gesture is already in progress');
 		}
+
+		const gesture = createGesture(createHandle, {
+			onComplete: () => {
+				this.activeGesture = null;
+				this.ui.activeGesture = null;
+
+				options.onComplete?.();
+			},
+
+			onCancel: () => {
+				this.activeGesture = null;
+				this.ui.activeGesture = null;
+
+				options.onCancel?.();
+			}
+		});
 
 		this.activeGesture = gesture;
 		return gesture;

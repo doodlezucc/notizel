@@ -2,14 +2,15 @@
 	import { type Vector } from '$lib/data/common';
 	import {
 		AreaSelectGestureState,
-		type AreaSelectGestureHandle
+		type AreaSelectGestureHandle,
+		type ControlledGestureHandle
 	} from '$lib/ui/state/gestures/gestures';
 	import { UIGeneralEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 
 	const ui = useUI();
 
-	let activeGesture: AreaSelectGestureHandle | null = null;
+	let activeGesture: ControlledGestureHandle<AreaSelectGestureHandle> | null = null;
 	let scheduledUpdate: number | null = null;
 
 	let activeGestureState = $derived.by(() => {
@@ -48,7 +49,7 @@
 	function onPointerUp() {
 		if (!activeGesture) return;
 
-		activeGesture.submit();
+		activeGesture.complete();
 		activeGesture = null;
 	}
 </script>
