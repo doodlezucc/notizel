@@ -1,9 +1,8 @@
 import { AxisAlignedBoundingBox, Vectors, type ID, type Vector } from '$lib/data/common';
 import type { CanvasFileData, TextBoxLayout, VaultFileMeta } from '$lib/data/vault';
-import { ChangeHistory, type Change } from '$lib/packages/history';
+import { type Change } from '$lib/packages/history';
 import type { OmitFromUnion } from '$lib/util/types';
 import { Temporal } from 'temporal-polyfill';
-import type { DependencyStack } from './dependency-stack';
 import {
 	AreaSelectGestureStateImpl,
 	type ObjectAreaSelectInformation
@@ -18,29 +17,12 @@ import {
 	type LiveObjectInstantiator,
 	type LiveTextCanvasObject
 } from './live-objects';
+import { StackUser } from './stack/stack-user';
 import { createTiptapEditor } from './tiptap/editor';
-import type { UIDOMBridge } from './ui-dom-bridge';
 import { UIGeneralEditingScope, UITextAreaEditingScope } from './ui-editing-scope.svelte';
-import type { UIState } from './ui-state.svelte';
 
-export class UICommands {
-	private readonly ui: UIState;
-	private readonly bridge: UIDOMBridge;
-	private readonly dependencyStack: DependencyStack;
-
-	private history = new ChangeHistory();
-
+export class UICommands extends StackUser {
 	private activeGesture: GestureHandle | null = null;
-
-	constructor(ui: UIState, bridge: UIDOMBridge, dependencyStack: DependencyStack) {
-		this.ui = ui;
-		this.bridge = bridge;
-		this.dependencyStack = dependencyStack;
-	}
-
-	private get persistence() {
-		return this.dependencyStack.persistence;
-	}
 
 	private readonly liveObjectInstantiator: LiveObjectInstantiator = {
 		createTiptapEditor: (initialContent) => {
@@ -211,7 +193,7 @@ export class UICommands {
 		const objects: ObjectAreaSelectInformation[] = [];
 
 		for (const object of this.ui.objects) {
-			const handle = this.bridge.getHandle(object.id);
+			const handle = this.domBridge.getHandle(object.id);
 
 			if (handle) {
 				objects.push({

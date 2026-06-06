@@ -3,7 +3,9 @@
 	import type { PersistenceAPI } from '$lib/data/persistence/api';
 	import { EmptyPersistence } from '$lib/data/persistence/empty-persistence';
 	import type { VaultFileMeta } from '$lib/data/vault';
-	import type { DependencyStack } from './dependency-stack';
+	import { ChangeHistory } from '$lib/packages/history';
+	import type { DependencyStack } from './stack/dependency-stack';
+	import { StackUser } from './stack/stack-user';
 	import { UICommands } from './ui-commands';
 	import { UIDOMBridge } from './ui-dom-bridge';
 	import { UIGeneralEditingScope } from './ui-editing-scope.svelte';
@@ -15,22 +17,20 @@
 		return getContext<UIContext>(CONTEXT_KEY);
 	}
 
-	class UIContextImpl implements UIContext {
-		private readonly ui: UIState;
-		private readonly dependencyStack: DependencyStack;
-
+	class UIContextImpl extends StackUser implements UIContext {
 		readonly commands: UICommands;
-		readonly bridge: UIDOMBridge;
 
-		constructor(ui: UIState, dependencyStack: DependencyStack) {
-			this.ui = ui;
-			this.dependencyStack = dependencyStack;
-			this.bridge = new UIDOMBridge();
-			this.commands = new UICommands(ui, this.bridge, dependencyStack);
+		constructor(dependencyStack: DependencyStack) {
+			super(dependencyStack);
+			this.commands = new UICommands(dependencyStack);
+		}
+
+		get bridge() {
+			return this.domBridge;
 		}
 
 		async initialize() {
-			this.ui.vault = await this.dependencyStack.persistence.loadVault();
+			this.ui.vault = await this.persistence.loadVault();
 
 			let mostRecentFile: VaultFileMeta | undefined;
 			for (const file of this.ui.vault.files) {
@@ -84,6 +84,9 @@
 	let { persistenceApi, children }: Props = $props();
 
 	const dependencyStack: DependencyStack = {
+		domBridge: new UIDOMBridge(),
+		history: new ChangeHistory(),
+		ui: new UIState(),
 		persistence: new EmptyPersistence()
 	};
 
@@ -97,7 +100,7 @@
 		});
 	});
 
-	const uiContext = new UIContextImpl(new UIState(), dependencyStack);
+	const uiContext = new UIContextImpl(dependencyStack);
 
 	setContext<UIContext>(CONTEXT_KEY, uiContext);
 </script>
