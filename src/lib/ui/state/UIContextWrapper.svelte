@@ -5,6 +5,7 @@
 	import type { VaultFileMeta } from '$lib/data/vault';
 	import { ChangeHistory } from '$lib/packages/history';
 	import type { DependencyStack } from './stack/dependency-stack';
+	import { StackLiveObjectInstantiator } from './stack/live-object-instantiator';
 	import { StackUser } from './stack/stack-user';
 	import { UICommands } from './ui-commands';
 	import { UIDOMBridge } from './ui-dom-bridge';
@@ -26,11 +27,11 @@
 		}
 
 		get bridge() {
-			return this.domBridge;
+			return this.stack.domBridge;
 		}
 
 		async initialize() {
-			this.ui.vault = await this.persistence.loadVault();
+			this.ui.vault = await this.stack.persistence.loadVault();
 
 			let mostRecentFile: VaultFileMeta | undefined;
 			for (const file of this.ui.vault.files) {
@@ -87,7 +88,10 @@
 		domBridge: new UIDOMBridge(),
 		history: new ChangeHistory(),
 		ui: new UIState(),
-		persistence: new EmptyPersistence()
+		persistence: new EmptyPersistence(),
+		get liveObjectInstantiator() {
+			return new StackLiveObjectInstantiator(dependencyStack);
+		}
 	};
 
 	$effect(() => {

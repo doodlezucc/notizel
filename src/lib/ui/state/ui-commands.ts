@@ -12,26 +12,16 @@ import type {
 	GestureHandle,
 	ObjectTransformGestureHandle
 } from './gestures/gestures';
-import {
-	unfreezeCanvasObject,
-	type LiveObjectInstantiator,
-	type LiveTextCanvasObject
-} from './live-objects';
+import { unfreezeCanvasObject, type LiveTextCanvasObject } from './live-objects';
 import { StackUser } from './stack/stack-user';
-import { createTiptapEditor } from './tiptap/editor';
 import { UIGeneralEditingScope, UITextAreaEditingScope } from './ui-editing-scope.svelte';
 
 export class UICommands extends StackUser {
 	private activeGesture: GestureHandle | null = null;
 
-	private readonly liveObjectInstantiator: LiveObjectInstantiator = {
-		createTiptapEditor: (initialContent) => {
-			return createTiptapEditor({
-				initialContent,
-				registerHistoryChange: (change) => this.history.execute('Edit text', change)
-			});
-		}
-	};
+	private get persistence() {
+		return this.stack.persistence;
+	}
 
 	async saveFile() {
 		const now = Temporal.Now.instant();
@@ -74,7 +64,7 @@ export class UICommands extends StackUser {
 		this.ui.fileMeta = meta;
 		this.ui.camera = data.camera;
 		this.ui.objects = data.objects.map((object) =>
-			unfreezeCanvasObject(object, this.liveObjectInstantiator)
+			unfreezeCanvasObject(object, this.stack.liveObjectInstantiator)
 		);
 		this.ui.editingScope = new UIGeneralEditingScope([]);
 	}
@@ -103,7 +93,7 @@ export class UICommands extends StackUser {
 			...props,
 			id: objectId,
 			type: 'text',
-			editor: this.liveObjectInstantiator.createTiptapEditor('')
+			editor: this.stack.liveObjectInstantiator.createTiptapEditor('')
 		};
 
 		const previousScope = this.ui.editingScope;
@@ -193,7 +183,7 @@ export class UICommands extends StackUser {
 		const objects: ObjectAreaSelectInformation[] = [];
 
 		for (const object of this.ui.objects) {
-			const handle = this.domBridge.getHandle(object.id);
+			const handle = this.stack.domBridge.getHandle(object.id);
 
 			if (handle) {
 				objects.push({
