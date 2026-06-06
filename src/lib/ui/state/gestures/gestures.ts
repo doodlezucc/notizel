@@ -19,7 +19,8 @@ export interface CreateHandleContext {
 	isComplete(): boolean;
 }
 
-export interface CreateGestureOptions {
+export interface CreateGestureOptions<T> {
+	createHandle: (context: CreateHandleContext) => T;
 	onComplete?: () => void;
 	onCancel?: () => void;
 }
@@ -29,14 +30,11 @@ export type ControlledGestureHandle<T = unknown> = T & {
 	cancel(): void;
 };
 
-export function createGesture<T>(
-	createHandle: (context: CreateHandleContext) => T,
-	options: CreateGestureOptions = {}
-): ControlledGestureHandle<T> {
+export function createGesture<T>(options: CreateGestureOptions<T>): ControlledGestureHandle<T> {
 	let isComplete = false;
 
 	return {
-		...createHandle({
+		...options.createHandle({
 			isComplete: () => isComplete
 		}),
 

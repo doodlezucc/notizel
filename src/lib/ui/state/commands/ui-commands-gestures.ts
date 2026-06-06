@@ -8,7 +8,6 @@ import {
 	type AreaSelectGestureHandle,
 	type ControlledGestureHandle,
 	type CreateGestureOptions,
-	type CreateHandleContext,
 	type ObjectTransformGestureHandle
 } from '../gestures/gestures';
 import { StackUser } from '../stack/stack-user';
@@ -51,34 +50,33 @@ export class UICommandsGestures extends StackUser {
 		const state = new AreaSelectGestureStateImpl(objects, initialPointer);
 		this.ui.activeGesture = state;
 
-		return this.startGesture<AreaSelectGestureHandle>(
-			(gesture) => ({
+		return this.startGesture<AreaSelectGestureHandle>({
+			createHandle: (gesture) => ({
 				updatePointerPosition: (currentPointer) => {
 					if (gesture.isComplete()) return;
 
 					state.updateArea(AxisAlignedBoundingBox.fromPoints(initialPointer, currentPointer));
 				}
 			}),
-			{
-				onComplete: () => {
-					const objectIdsInArea = new Set(state.idsInArea);
 
-					const newSelection = deselectOthers
-						? objectIdsInArea
-						: objectIdsInArea.union(selectionAtStart);
+			onComplete: () => {
+				const objectIdsInArea = new Set(state.idsInArea);
 
-					if (newSelection.symmetricDifference(selectionAtStart).size > 0) {
-						this.history.execute('Area select', () => {
-							this.ui.applySelection(newSelection);
+				const newSelection = deselectOthers
+					? objectIdsInArea
+					: objectIdsInArea.union(selectionAtStart);
 
-							return () => {
-								this.ui.applySelection(selectionAtStart);
-							};
-						});
-					}
+				if (newSelection.symmetricDifference(selectionAtStart).size > 0) {
+					this.history.execute('Area select', () => {
+						this.ui.applySelection(newSelection);
+
+						return () => {
+							this.ui.applySelection(selectionAtStart);
+						};
+					});
 				}
 			}
-		);
+		});
 	}
 
 	startMovingSelectedObjects() {
@@ -87,8 +85,8 @@ export class UICommandsGestures extends StackUser {
 
 		let totalOffset: Vector = { x: 0, y: 0 };
 
-		return this.startGesture<ObjectTransformGestureHandle>(
-			(gesture) => ({
+		return this.startGesture<ObjectTransformGestureHandle>({
+			createHandle: (gesture) => ({
 				moveObjectsBy: (offset) => {
 					if (gesture.isComplete()) return;
 
@@ -96,38 +94,35 @@ export class UICommandsGestures extends StackUser {
 					totalOffset = Vectors.add(totalOffset, offset);
 				}
 			}),
-			{
-				onComplete: () => {
-					const message =
-						affectedIds.size === 1 ? 'Move object' : `Move ${affectedIds.size} objects`;
 
-					this.history.execute(message, ({ isRedo }) => {
-						if (isRedo) {
-							this.ui.moveObjectsByOffset(affectedIds, totalOffset);
-						}
+			onComplete: () => {
+				const message = affectedIds.size === 1 ? 'Move object' : `Move ${affectedIds.size} objects`;
 
-						return () => {
-							this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
-						};
-					});
-				},
+				this.history.execute(message, ({ isRedo }) => {
+					if (isRedo) {
+						this.ui.moveObjectsByOffset(affectedIds, totalOffset);
+					}
 
-				onCancel: () => {
-					this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
-				}
+					return () => {
+						this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
+					};
+				});
+			},
+
+			onCancel: () => {
+				this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
 			}
-		);
+		});
 	}
 
-	private startGesture<T>(
-		createHandle: (context: CreateHandleContext) => T,
-		options: CreateGestureOptions = {}
-	): ControlledGestureHandle<T> {
+	private startGesture<T>(options: CreateGestureOptions<T>): ControlledGestureHandle<T> {
 		if (this.activeGesture) {
 			throw new Error('A different gesture is already in progress');
 		}
 
-		const gesture = createGesture(createHandle, {
+		const gesture = createGesture({
+			...options,
+
 			onComplete: () => {
 				this.activeGesture = null;
 				this.ui.activeGesture = null;
