@@ -47,15 +47,21 @@
 	}
 
 	function getRenderedSize(): Size {
-		if (!container) throw new Error('Container is not mounted');
-
-		const clientRect = container.getBoundingClientRect();
+		const clientRect = getAxisAlignedBoundingClientRect();
 
 		if (computeSize) {
 			return computeSize(clientRect);
 		} else {
 			return clientRect;
 		}
+	}
+
+	export function getAxisAlignedBoundingClientRect() {
+		if (!container) throw new Error('Container is not mounted');
+
+		// If rotation ever gets added to text area objects, this is where
+		// it would need to be inverted.
+		return container.getBoundingClientRect();
 	}
 
 	const controller: TextAreaObjectController = {

@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { Vectors, type ID, type Vector } from '$lib/data/common';
 	import type { ObjectTransformGesture } from '$lib/ui/state/ui-commands';
+	import type { MountedObject } from '$lib/ui/state/ui-dom-bridge';
 	import { UIGeneralEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
-	import { type Snippet } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 
 	interface ChildContext {
@@ -12,11 +13,12 @@
 
 	interface Props {
 		objectId: ID;
+		mountedObject: MountedObject;
 		ignoreDragging?: boolean;
 		content: Snippet<[ChildContext]>;
 	}
 
-	let { objectId, ignoreDragging = false, content }: Props = $props();
+	let { objectId, mountedObject, ignoreDragging = false, content }: Props = $props();
 
 	const ui = useUI();
 
@@ -81,6 +83,14 @@
 			};
 		};
 	}
+
+	onMount(() => {
+		ui.bridge.registerMountedObject(objectId, mountedObject);
+
+		return () => {
+			ui.bridge.unregisterMountedObject(objectId);
+		};
+	});
 </script>
 
 <svelte:window onpointermove={onPointerMove} onpointerup={onPointerUp} />

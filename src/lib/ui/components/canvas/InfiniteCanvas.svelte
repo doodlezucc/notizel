@@ -5,22 +5,17 @@
 
 	interface Props {
 		transform: CameraTransform;
+		onBackgroundPrimaryPointerDownRaw?: (ev: PointerEvent) => void;
 		onBackgroundTap?: (ev: TransformedPointerEvent) => void;
 		onBackgroundDoubleTap?: (ev: TransformedPointerEvent) => void;
 		background: Snippet<[{ transform: CameraTransform }]>;
 		children: Snippet;
 	}
 
-	let {
-		transform = $bindable(),
-		onBackgroundTap,
-		onBackgroundDoubleTap,
-		background,
-		children
-	}: Props = $props();
+	let { transform = $bindable(), background, children, ...events }: Props = $props();
 </script>
 
-<PannableTransform bind:transform {onBackgroundTap} {onBackgroundDoubleTap}>
+<PannableTransform bind:transform {...events}>
 	{#snippet content({ containerEvents, backgroundEvents })}
 		<div class="canvas" {@attach containerEvents}>
 			<div class="background" aria-label="Background" tabindex="-1" {@attach backgroundEvents}>

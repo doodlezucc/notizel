@@ -5,6 +5,7 @@
 	import type { VaultFileMeta } from '$lib/data/vault';
 	import type { DependencyStack } from './dependency-stack';
 	import { UICommands } from './ui-commands';
+	import { UIDOMBridge } from './ui-dom-bridge';
 	import { UIGeneralEditingScope } from './ui-editing-scope.svelte';
 	import { UIState, type UIContext } from './ui-state.svelte';
 
@@ -19,11 +20,13 @@
 		private readonly dependencyStack: DependencyStack;
 
 		readonly commands: UICommands;
+		readonly bridge: UIDOMBridge;
 
 		constructor(ui: UIState, dependencyStack: DependencyStack) {
 			this.ui = ui;
 			this.dependencyStack = dependencyStack;
-			this.commands = new UICommands(ui, dependencyStack);
+			this.bridge = new UIDOMBridge();
+			this.commands = new UICommands(ui, this.bridge, dependencyStack);
 		}
 
 		async initialize() {
@@ -65,6 +68,8 @@
 				return new Set();
 			}
 		});
+
+		readonly activeGesture = $derived.by(() => this.ui.activeGesture);
 	}
 </script>
 

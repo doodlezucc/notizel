@@ -19,6 +19,7 @@
 
 	interface Props {
 		transform: CameraTransform;
+		onBackgroundPrimaryPointerDownRaw?: (ev: PointerEvent) => void;
 		onBackgroundTap?: (ev: TransformedPointerEvent) => void;
 		onBackgroundDoubleTap?: (ev: TransformedPointerEvent) => void;
 		content: Snippet<[ChildContext]>;
@@ -29,6 +30,7 @@
 	let containerRect: DOMRect | undefined;
 
 	interface GestureContext {
+		isPanGesture: boolean;
 		previousPointer: Vector;
 		isClickEvent: boolean;
 	}
@@ -59,8 +61,14 @@
 
 	function onPointerDown(ev: PointerEvent) {
 		ev.preventDefault();
+		if (activeGesture) return;
+
+		if (ev.button === 0) {
+			events.onBackgroundPrimaryPointerDownRaw?.(ev);
+		}
 
 		activeGesture = {
+			isPanGesture: ev.button !== 0,
 			previousPointer: { x: ev.clientX, y: ev.clientY },
 			isClickEvent: true
 		};
@@ -72,20 +80,22 @@
 		// Maybe a threshold is needed here on mobile
 		activeGesture.isClickEvent = false;
 
-		const pointer: Vector = { x: ev.clientX, y: ev.clientY };
+		if (activeGesture.isPanGesture) {
+			const pointer: Vector = { x: ev.clientX, y: ev.clientY };
 
-		const pointerDelta = Vectors.subtract(pointer, activeGesture.previousPointer);
-		const delta = Vectors.scale(pointerDelta, 1 / transform.scale);
+			const pointerDelta = Vectors.subtract(pointer, activeGesture.previousPointer);
+			const delta = Vectors.scale(pointerDelta, 1 / transform.scale);
 
-		transform.position = Vectors.add(transform.position, delta);
+			transform.position = Vectors.add(transform.position, delta);
 
-		activeGesture.previousPointer = pointer;
+			activeGesture.previousPointer = pointer;
+		}
 	}
 
 	function onPointerUp() {
 		if (!activeGesture) return;
 
-		if (activeGesture.isClickEvent) {
+		if (!activeGesture.isPanGesture && activeGesture.isClickEvent) {
 			events.onBackgroundTap?.(createTransformedPointerEvent(activeGesture.previousPointer));
 		}
 

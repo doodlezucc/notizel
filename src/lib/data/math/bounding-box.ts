@@ -45,6 +45,13 @@ export class AxisAlignedBoundingBox extends BoundingBox {
 		return new AxisAlignedBoundingBox(topLeft, size);
 	}
 
+	static fromCenter(center: Vector, size: Size) {
+		return new AxisAlignedBoundingBox(
+			{ x: center.x - size.width / 2, y: center.y - size.height / 2 },
+			size
+		);
+	}
+
 	static fromPoints(a: Vector, b: Vector) {
 		const topLeft: Vector = { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y) };
 		const bottomRight: Vector = { x: Math.max(a.x, b.x), y: Math.max(a.y, b.y) };

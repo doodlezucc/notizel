@@ -1,4 +1,11 @@
-import { Vectors, type ID, type Vector } from '$lib/data/common';
+import {
+	AxisAlignedBoundingBox,
+	BoundingBox,
+	BoundingBoxes,
+	Vectors,
+	type ID,
+	type Vector
+} from '$lib/data/common';
 import type { CanvasFileData, TextBoxLayout, VaultFileMeta } from '$lib/data/vault';
 import { ChangeHistory, type Change } from '$lib/packages/history';
 import type { OmitFromUnion } from '$lib/util/types';
@@ -10,19 +17,22 @@ import {
 	type LiveTextCanvasObject
 } from './live-objects';
 import { createTiptapEditor } from './tiptap/editor';
+import type { UIDOMBridge } from './ui-dom-bridge';
 import { UIGeneralEditingScope, UITextAreaEditingScope } from './ui-editing-scope.svelte';
 import type { UIState } from './ui-state.svelte';
 
 export class UICommands {
 	private readonly ui: UIState;
+	private readonly bridge: UIDOMBridge;
 	private readonly dependencyStack: DependencyStack;
 
 	private history = new ChangeHistory();
 
 	private activeGesture: Gesture | null = null;
 
-	constructor(ui: UIState, dependencyStack: DependencyStack) {
+	constructor(ui: UIState, bridge: UIDOMBridge, dependencyStack: DependencyStack) {
 		this.ui = ui;
+		this.bridge = bridge;
 		this.dependencyStack = dependencyStack;
 	}
 
@@ -182,7 +192,74 @@ export class UICommands {
 		});
 	}
 
-	startMovingSelection(): ObjectTransformGesture {
+	startAreaSelecting(pointerInClientSpace: Vector) {
+		const scope = this.requireGeneralEditingScope();
+		const selectionAtStart = new Set(scope.selectedIds);
+
+		const initialPointer = pointerInClientSpace;
+		const areaSelectStates: ObjectAreaSelectState[] = [];
+
+		const initialArea = AxisAlignedBoundingBox.fromTopLeft(pointerInClientSpace, {
+			width: 0,
+			height: 0
+		});
+
+		for (const object of this.ui.objects) {
+			const handle = this.bridge.getHandle(object.id);
+
+			if (handle) {
+				const bounds = handle.computeBoundsInClientSpace();
+
+				areaSelectStates.push({
+					id: object.id,
+					bounds: handle.computeBoundsInClientSpace(),
+					isInArea: BoundingBoxes.checkOverlapping(initialArea, bounds)
+				});
+			}
+		}
+
+		let isDone = false;
+
+		return this.startGesture<AreaSelectGesture>({
+			updatePointerPosition: (currentPointer) => {
+				const areaBoundingBox = AxisAlignedBoundingBox.fromPoints(initialPointer, currentPointer);
+
+				for (const objectState of areaSelectStates) {
+					const isOverlapping = BoundingBoxes.checkOverlapping(areaBoundingBox, objectState.bounds);
+
+					// TODO: Use $state for this?
+					objectState.isInArea = isOverlapping;
+				}
+			},
+
+			submit: () => {
+				if (isDone) return;
+				isDone = true;
+				this.activeGesture = null;
+
+				const objectIdsInArea = new Set(
+					areaSelectStates.filter((state) => state.isInArea).map((state) => state.id)
+				);
+
+				const newSelection = objectIdsInArea;
+
+				if (newSelection.symmetricDifference(selectionAtStart).size > 0) {
+					// TODO: deselectOthers should be determined by the initial pointer event
+					// (and reflected in the UI already WHILE area selecting).
+					this.select(objectIdsInArea, { deselectOthers: true });
+				}
+			},
+
+			cancel: () => {
+				if (isDone) return;
+				isDone = true;
+
+				this.activeGesture = null;
+			}
+		});
+	}
+
+	startMovingSelection() {
 		const scope = this.requireGeneralEditingScope();
 		const affectedIds = new Set(scope.selectedIds);
 
@@ -371,4 +448,14 @@ export interface Gesture {
 
 export interface ObjectTransformGesture extends Gesture {
 	moveObjectsBy(offset: Vector): void;
+}
+
+export interface AreaSelectGesture extends Gesture {
+	updatePointerPosition(clientSpace: Vector): void;
+}
+
+interface ObjectAreaSelectState {
+	id: ID;
+	bounds: BoundingBox;
+	isInArea: boolean;
 }
