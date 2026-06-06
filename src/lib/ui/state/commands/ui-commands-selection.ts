@@ -1,6 +1,5 @@
 import type { ID } from '$lib/data/common';
 import type { Change } from '$lib/packages/history';
-import { freezeCanvasObject } from '../live-objects';
 import { StackUser } from '../stack/stack-user';
 
 export class UICommandsSelection extends StackUser {
@@ -86,36 +85,5 @@ export class UICommandsSelection extends StackUser {
 				}
 			};
 		});
-	}
-
-	async cutSelectionToClipboard() {
-		await this.writeSelectionToClipboard({ deleteObjects: true });
-	}
-
-	async copySelectionToClipboard() {
-		await this.writeSelectionToClipboard({ deleteObjects: false });
-	}
-
-	private async writeSelectionToClipboard({ deleteObjects }: { deleteObjects: boolean }) {
-		const scope = this.requireGeneralEditingScope();
-		const selectedObjects = this.ui.objects.filter((object) => scope.selectedIds.has(object.id));
-
-		if (selectedObjects.length === 0) {
-			return;
-		}
-
-		const frozenCopies = selectedObjects.map((object) => {
-			const frozen = freezeCanvasObject(object);
-			frozen.id = crypto.randomUUID(); // TODO: Again, incremental IDs would be cooler
-
-			return frozen;
-		});
-
-		if (deleteObjects) {
-			this.deleteSelectedObjects();
-		}
-
-		const clipboardEntryJson = JSON.stringify(frozenCopies);
-		await navigator.clipboard.writeText(clipboardEntryJson);
 	}
 }

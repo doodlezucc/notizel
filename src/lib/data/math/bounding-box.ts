@@ -1,7 +1,9 @@
 import type { Size } from './size';
 import { Vectors, type Vector } from './vector';
 
-export abstract class BoundingBox {}
+export abstract class BoundingBox {
+	abstract readonly center: Vector;
+}
 
 export const BoundingBoxes = {
 	checkOverlapping: (a: BoundingBox, b: BoundingBox): boolean => {

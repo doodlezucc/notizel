@@ -1,3 +1,4 @@
+import { UICommandsClipboard } from './commands/ui-commands-clipboard';
 import { UICommandsGestures } from './commands/ui-commands-gestures';
 import { UICommandsIO } from './commands/ui-commands-io';
 import { UICommandsSelection } from './commands/ui-commands-selection';
@@ -6,6 +7,7 @@ import { StackUser } from './stack/stack-user';
 import { UIGeneralEditingScope, UITextAreaEditingScope } from './ui-editing-scope.svelte';
 
 export class UICommands extends StackUser {
+	readonly clipboard = new UICommandsClipboard(this.stack);
 	readonly gestures = new UICommandsGestures(this.stack);
 	readonly io = new UICommandsIO(this.stack);
 	readonly selection = new UICommandsSelection(this.stack);

@@ -3,6 +3,7 @@
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import type { Snippet } from 'svelte';
 	import { InputSet } from 'svelte-input-system';
+	import ClipboardPasteWrapper from './ClipboardPasteWrapper.svelte';
 
 	export const CanvasInputSet = InputSet.stateful({
 		actions: {
@@ -42,10 +43,10 @@
 	});
 
 	GeneralEditingInputSet.actions.copy.handleDown(() => {
-		ui.commands.selection.copySelectionToClipboard();
+		ui.commands.clipboard.copySelectionToClipboard();
 	});
 	GeneralEditingInputSet.actions.cut.handleDown(() => {
-		ui.commands.selection.cutSelectionToClipboard();
+		ui.commands.clipboard.cutSelectionToClipboard();
 	});
 
 	CanvasInputSet.state.actions.save.handleDown(() => {
@@ -72,4 +73,6 @@
 	});
 </script>
 
-{@render children()}
+<ClipboardPasteWrapper>
+	{@render children()}
+</ClipboardPasteWrapper>
