@@ -68,14 +68,14 @@
 </script>
 
 <UICanvasDraggableObject objectId={object.id} ignoreDragging={isEditing} {mountedObject}>
-	{#snippet content({ draggableEvents })}
+	{#snippet content({ isInAreaSelection, draggableEvents })}
 		<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
 		{@const { editor, id, type, ...layout } = object}
 
 		<TextAreaObject
 			bind:this={textArea}
 			editor={object.editor}
-			{isSelected}
+			isSelected={isSelected || isInAreaSelection}
 			{isEditing}
 			computeSize={(rect) => ({
 				width: rect.width / ui.camera.scale,

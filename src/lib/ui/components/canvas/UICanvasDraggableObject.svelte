@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { Vectors, type ID, type Vector } from '$lib/data/common';
-	import type { ObjectTransformGestureHandle } from '$lib/ui/state/gestures/gestures';
+	import {
+		AreaSelectGestureState,
+		type ObjectTransformGestureHandle
+	} from '$lib/ui/state/gestures/gestures';
 	import type { MountedObject } from '$lib/ui/state/ui-dom-bridge';
 	import { UIGeneralEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
@@ -8,6 +11,7 @@
 	import type { Attachment } from 'svelte/attachments';
 
 	interface ChildContext {
+		isInAreaSelection: boolean;
 		draggableEvents: Attachment<HTMLElement>;
 	}
 
@@ -96,5 +100,9 @@
 <svelte:window onpointermove={onPointerMove} onpointerup={onPointerUp} />
 
 {@render content({
+	isInAreaSelection:
+		ui.activeGesture instanceof AreaSelectGestureState
+			? ui.activeGesture.idsInArea.has(objectId)
+			: false,
 	draggableEvents: createDraggableAttachment()
 })}
