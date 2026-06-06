@@ -11,7 +11,7 @@
 		object: LiveTextCanvasObject;
 	}
 
-	let { object = $bindable() }: Props = $props();
+	let { object }: Props = $props();
 
 	const ui = useUI();
 

@@ -26,8 +26,8 @@
 			<EditorCanvasBackground transform={ui.camera} />
 		{/snippet}
 
-		{#each ui.objects as object, index (object.id)}
-			<UITextAreaObject bind:object={ui.objects[index]} />
+		{#each ui.objects as object (object.id)}
+			<UITextAreaObject {object} />
 		{/each}
 	</InfiniteCanvas>
 </EditorCanvasInputScope>
