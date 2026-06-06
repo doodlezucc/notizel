@@ -45,7 +45,7 @@
 			}
 
 			if (mostRecentFile) {
-				this.commands.loadFile(mostRecentFile.id);
+				await this.commands.io.loadFile(mostRecentFile.id);
 			}
 		}
 

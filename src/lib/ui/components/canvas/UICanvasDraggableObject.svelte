@@ -42,11 +42,11 @@
 		ev.preventDefault();
 
 		if (!isSelected) {
-			ui.commands.select([objectId], { deselectOthers: !ev.shiftKey });
+			ui.commands.selection.select([objectId], { deselectOthers: !ev.shiftKey });
 		}
 
 		activeDragging = {
-			gesture: ui.commands.startMovingSelection(),
+			gesture: ui.commands.gestures.startMovingSelectedObjects(),
 			previousPointer: { x: ev.screenX, y: ev.screenY },
 			hasMovedAtAll: false
 		};

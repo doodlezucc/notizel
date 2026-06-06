@@ -34,11 +34,11 @@
 	CanvasInputSet.state
 		.conditional(() => ui.editingScope instanceof UIGeneralEditingScope)
 		.actions.delete.handleDown(() => {
-			ui.commands.deleteSelection();
+			ui.commands.selection.deleteSelectedObjects();
 		});
 
 	CanvasInputSet.state.actions.save.handleDown(() => {
-		ui.commands.saveFile();
+		ui.commands.io.saveFile();
 	});
 
 	CanvasInputSet.state.actions.escape.handleDownWithRepeats(() => {

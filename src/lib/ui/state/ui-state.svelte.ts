@@ -62,4 +62,30 @@ export class UIState {
 				return;
 		}
 	}
+
+	requireGeneralEditingScope() {
+		if (!(this.editingScope instanceof UIGeneralEditingScope)) {
+			throw new Error('Selection is only possible in a general editing scope');
+		}
+		return this.editingScope;
+	}
+
+	applySelection(idSet: ReadonlySet<ID>) {
+		const scope = this.requireGeneralEditingScope();
+
+		const idsToRemove = scope.selectedIds.difference(idSet);
+
+		if (idsToRemove.size === scope.selectedIds.size) {
+			scope.selectedIds.clear();
+		} else {
+			for (const idToRemove of idsToRemove) {
+				scope.selectedIds.delete(idToRemove);
+			}
+		}
+
+		const idsToAdd = idSet.difference(scope.selectedIds);
+		for (const idToAdd of idsToAdd) {
+			scope.selectedIds.add(idToAdd);
+		}
+	}
 }

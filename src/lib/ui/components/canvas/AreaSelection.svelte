@@ -25,7 +25,10 @@
 	export function start(ev: PointerEvent) {
 		if (ui.editingScope instanceof UIGeneralEditingScope && ui.activeGesture === null) {
 			currentPointerPosition = { x: ev.clientX, y: ev.clientY };
-			activeGesture = ui.commands.startAreaSelecting(currentPointerPosition);
+
+			activeGesture = ui.commands.gestures.startAreaSelecting(currentPointerPosition, {
+				deselectOthers: !ev.shiftKey
+			});
 		}
 	}
 

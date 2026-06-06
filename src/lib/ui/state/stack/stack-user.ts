@@ -1,3 +1,4 @@
+import { UIGeneralEditingScope } from '../ui-editing-scope.svelte';
 import type { DependencyStack } from './dependency-stack';
 
 export abstract class StackUser {
@@ -13,5 +14,9 @@ export abstract class StackUser {
 
 	protected get history() {
 		return this.stack.history;
+	}
+
+	protected requireGeneralEditingScope(): UIGeneralEditingScope {
+		return this.ui.requireGeneralEditingScope();
 	}
 }

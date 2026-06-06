@@ -16,7 +16,7 @@
 		bind:transform={ui.camera}
 		onBackgroundPrimaryPointerDownRaw={(ev) => areaSelection?.start(ev)}
 		onBackgroundTap={() => {
-			ui.commands.cancelActiveGesture();
+			ui.commands.gestures.cancelActive();
 			ui.commands.exitCurrentScope();
 		}}
 		onBackgroundDoubleTap={(ev) => {
