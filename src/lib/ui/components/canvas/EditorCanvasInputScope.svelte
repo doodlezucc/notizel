@@ -17,7 +17,8 @@
 				{ logicalKey: 'Redo' }
 			],
 
-			delete: [{ logicalKey: 'Backspace' }, { logicalKey: 'Delete' }]
+			delete: [{ logicalKey: 'Backspace' }, { logicalKey: 'Delete' }],
+			copy: [{ logicalKey: 'C', modifiers: { ctrl: true } }, { logicalKey: 'Copy' }]
 		}
 	});
 </script>
@@ -31,11 +32,17 @@
 
 	const ui = useUI();
 
-	CanvasInputSet.state
-		.conditional(() => ui.editingScope instanceof UIGeneralEditingScope)
-		.actions.delete.handleDown(() => {
-			ui.commands.selection.deleteSelectedObjects();
-		});
+	const GeneralEditingInputSet = CanvasInputSet.state.conditional(
+		() => ui.editingScope instanceof UIGeneralEditingScope
+	);
+
+	GeneralEditingInputSet.actions.delete.handleDown(() => {
+		ui.commands.selection.deleteSelectedObjects();
+	});
+
+	GeneralEditingInputSet.actions.copy.handleDown(() => {
+		ui.commands.selection.copySelectionToClipboard();
+	});
 
 	CanvasInputSet.state.actions.save.handleDown(() => {
 		ui.commands.io.saveFile();
