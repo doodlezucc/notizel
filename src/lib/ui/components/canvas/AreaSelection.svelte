@@ -1,13 +1,24 @@
 <script lang="ts">
-	import { AxisAlignedBoundingBox, type Vector } from '$lib/data/common';
-	import type { AreaSelectGesture } from '$lib/ui/state/ui-commands';
+	import { type Vector } from '$lib/data/common';
+	import {
+		AreaSelectGestureState,
+		type AreaSelectGestureHandle
+	} from '$lib/ui/state/gestures/gestures';
 	import { UIGeneralEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 
 	const ui = useUI();
 
-	let activeGesture = $state<AreaSelectGesture | null>(null);
+	let activeGesture: AreaSelectGestureHandle | null = null;
 	let scheduledUpdate: number | null = null;
+
+	let activeGestureState = $derived.by(() => {
+		if (ui.activeGesture instanceof AreaSelectGestureState) {
+			return ui.activeGesture;
+		} else {
+			return null;
+		}
+	});
 
 	let currentPointerPosition = $state() as Vector;
 
@@ -41,11 +52,8 @@
 
 <svelte:window onpointermove={(ev) => onPointerMove(ev)} onpointerup={() => onPointerUp()} />
 
-{#if activeGesture}
-	{@const boundingBox = AxisAlignedBoundingBox.fromPoints(
-		activeGesture.initialPointerPosition,
-		currentPointerPosition
-	)}
+{#if activeGestureState}
+	{@const boundingBox = activeGestureState.area}
 
 	{#if boundingBox.size.width > 0 || boundingBox.size.height > 0}
 		<div

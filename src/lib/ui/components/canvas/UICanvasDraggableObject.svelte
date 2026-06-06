@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Vectors, type ID, type Vector } from '$lib/data/common';
-	import type { ObjectTransformGesture } from '$lib/ui/state/ui-commands';
+	import type { ObjectTransformGestureHandle } from '$lib/ui/state/gestures/gestures';
 	import type { MountedObject } from '$lib/ui/state/ui-dom-bridge';
 	import { UIGeneralEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
@@ -25,7 +25,7 @@
 	let isSelected = $derived(ui.selectedIds.has(objectId));
 
 	interface DraggingContext {
-		gesture: ObjectTransformGesture;
+		gesture: ObjectTransformGestureHandle;
 		previousPointer: Vector;
 		hasMovedAtAll: boolean;
 	}

@@ -1,16 +1,18 @@
-import {
-	AxisAlignedBoundingBox,
-	BoundingBox,
-	BoundingBoxes,
-	Vectors,
-	type ID,
-	type Vector
-} from '$lib/data/common';
+import { AxisAlignedBoundingBox, Vectors, type ID, type Vector } from '$lib/data/common';
 import type { CanvasFileData, TextBoxLayout, VaultFileMeta } from '$lib/data/vault';
 import { ChangeHistory, type Change } from '$lib/packages/history';
 import type { OmitFromUnion } from '$lib/util/types';
 import { Temporal } from 'temporal-polyfill';
 import type { DependencyStack } from './dependency-stack';
+import {
+	AreaSelectGestureStateImpl,
+	type ObjectAreaSelectInformation
+} from './gestures/area-select.svelte';
+import type {
+	AreaSelectGestureHandle,
+	GestureHandle,
+	ObjectTransformGestureHandle
+} from './gestures/gestures';
 import {
 	unfreezeCanvasObject,
 	type LiveObjectInstantiator,
@@ -28,7 +30,7 @@ export class UICommands {
 
 	private history = new ChangeHistory();
 
-	private activeGesture: Gesture | null = null;
+	private activeGesture: GestureHandle | null = null;
 
 	constructor(ui: UIState, bridge: UIDOMBridge, dependencyStack: DependencyStack) {
 		this.ui = ui;
@@ -206,52 +208,36 @@ export class UICommands {
 		const selectionAtStart = new Set(scope.selectedIds);
 
 		const initialPointer = pointerInClientSpace;
-		const areaSelectStates: ObjectAreaSelectState[] = [];
-
-		const initialArea = AxisAlignedBoundingBox.fromTopLeft(pointerInClientSpace, {
-			width: 0,
-			height: 0
-		});
+		const objects: ObjectAreaSelectInformation[] = [];
 
 		for (const object of this.ui.objects) {
 			const handle = this.bridge.getHandle(object.id);
 
 			if (handle) {
-				const bounds = handle.computeBoundsInClientSpace();
-
-				areaSelectStates.push({
+				objects.push({
 					id: object.id,
-					bounds: handle.computeBoundsInClientSpace(),
-					isInArea: BoundingBoxes.checkOverlapping(initialArea, bounds)
+					bounds: handle.computeBoundsInClientSpace()
 				});
 			}
 		}
 
 		let isDone = false;
 
-		return this.startGesture<AreaSelectGesture>({
-			initialPointerPosition: initialPointer,
+		const state = new AreaSelectGestureStateImpl(objects, initialPointer);
+		this.ui.activeGesture = state;
 
+		return this.startGesture<AreaSelectGestureHandle>({
 			updatePointerPosition: (currentPointer) => {
-				const areaBoundingBox = AxisAlignedBoundingBox.fromPoints(initialPointer, currentPointer);
-
-				for (const objectState of areaSelectStates) {
-					const isOverlapping = BoundingBoxes.checkOverlapping(areaBoundingBox, objectState.bounds);
-
-					// TODO: Use $state for this?
-					objectState.isInArea = isOverlapping;
-				}
+				state.updateArea(AxisAlignedBoundingBox.fromPoints(initialPointer, currentPointer));
 			},
 
 			submit: () => {
 				if (isDone) return;
 				isDone = true;
 				this.activeGesture = null;
+				this.ui.activeGesture = null;
 
-				const objectIdsInArea = new Set(
-					areaSelectStates.filter((state) => state.isInArea).map((state) => state.id)
-				);
-
+				const objectIdsInArea = new Set(state.idsInArea);
 				const newSelection = objectIdsInArea;
 
 				if (newSelection.symmetricDifference(selectionAtStart).size > 0) {
@@ -266,6 +252,7 @@ export class UICommands {
 				isDone = true;
 
 				this.activeGesture = null;
+				this.ui.activeGesture = null;
 			}
 		});
 	}
@@ -277,7 +264,7 @@ export class UICommands {
 		let totalOffset: Vector = { x: 0, y: 0 };
 		let isGestureDone = false;
 
-		return this.startGesture<ObjectTransformGesture>({
+		return this.startGesture<ObjectTransformGestureHandle>({
 			moveObjectsBy: (offset) => {
 				if (isGestureDone) return;
 
@@ -313,7 +300,7 @@ export class UICommands {
 		});
 	}
 
-	private startGesture<T extends Gesture>(gesture: T): T {
+	private startGesture<T extends GestureHandle>(gesture: T): T {
 		if (this.activeGesture) {
 			throw new Error('A different gesture is already in progress');
 		}
@@ -450,24 +437,4 @@ export class UICommands {
 			};
 		});
 	}
-}
-
-export interface Gesture {
-	submit(): void;
-	cancel(): void;
-}
-
-export interface ObjectTransformGesture extends Gesture {
-	moveObjectsBy(offset: Vector): void;
-}
-
-export interface AreaSelectGesture extends Gesture {
-	readonly initialPointerPosition: Vector;
-	updatePointerPosition(clientSpace: Vector): void;
-}
-
-interface ObjectAreaSelectState {
-	id: ID;
-	bounds: BoundingBox;
-	isInArea: boolean;
 }

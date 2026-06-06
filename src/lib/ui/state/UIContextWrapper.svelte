@@ -48,15 +48,17 @@
 			}
 		}
 
-		readonly vault = $derived.by(() => this.ui.vault);
-		readonly fileMeta = $derived.by(() => this.ui.fileMeta);
-
 		get camera() {
 			return this.ui.camera;
 		}
 		set camera(camera: CameraTransform) {
 			this.ui.camera = camera;
 		}
+
+		readonly activeGesture = $derived.by(() => this.ui.activeGesture);
+
+		readonly vault = $derived.by(() => this.ui.vault);
+		readonly fileMeta = $derived.by(() => this.ui.fileMeta);
 
 		readonly objects = $derived.by(() => this.ui.objects);
 		readonly editingScope = $derived.by(() => this.ui.editingScope);
@@ -68,8 +70,6 @@
 				return new Set();
 			}
 		});
-
-		readonly activeGesture = $derived.by(() => this.ui.activeGesture);
 	}
 </script>
 
