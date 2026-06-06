@@ -19,6 +19,8 @@ export class UICommands {
 
 	private history = new ChangeHistory();
 
+	private activeGesture: Gesture | null = null;
+
 	constructor(ui: UIState, dependencyStack: DependencyStack) {
 		this.ui = ui;
 		this.dependencyStack = dependencyStack;
@@ -84,10 +86,19 @@ export class UICommands {
 	}
 
 	undo() {
+		if (this.activeGesture) {
+			this.activeGesture.cancel();
+			return null;
+		}
+
 		return this.history.undo();
 	}
 
 	redo() {
+		if (this.activeGesture) {
+			return null;
+		}
+
 		return this.history.redo();
 	}
 
@@ -114,7 +125,11 @@ export class UICommands {
 		});
 	}
 
-	exitEditingScope() {
+	exitCurrentScope() {
+		if (this.activeGesture) {
+			return this.activeGesture.cancel();
+		}
+
 		const scope = this.ui.editingScope;
 		if (scope instanceof UITextAreaEditingScope) {
 			this.exitTextAreaScope(scope);
@@ -167,27 +182,56 @@ export class UICommands {
 		});
 	}
 
-	// TODO: Refactor into borrowed gesture handle
-	moveSelectionByOffset(offset: Vector) {
-		const scope = this.requireGeneralEditingScope();
-		this.ui.moveObjectsByOffset(scope.selectedIds, offset);
-	}
-
-	submitMoveSelectionByOffset(totalOffset: Vector) {
+	startMovingSelection(): ObjectTransformGesture {
 		const scope = this.requireGeneralEditingScope();
 		const affectedIds = new Set(scope.selectedIds);
 
-		const message = affectedIds.size === 1 ? 'Move object' : `Move ${affectedIds.size} objects`;
+		let totalOffset: Vector = { x: 0, y: 0 };
+		let isGestureDone = false;
 
-		this.history.execute(message, ({ isRedo }) => {
-			if (isRedo) {
-				this.ui.moveObjectsByOffset(affectedIds, totalOffset);
-			}
+		return this.startGesture<ObjectTransformGesture>({
+			moveObjectsBy: (offset) => {
+				if (isGestureDone) return;
 
-			return () => {
+				this.ui.moveObjectsByOffset(affectedIds, offset);
+				totalOffset = Vectors.add(totalOffset, offset);
+			},
+
+			submit: () => {
+				if (isGestureDone) return;
+				isGestureDone = true;
+				this.activeGesture = null;
+
+				const message = affectedIds.size === 1 ? 'Move object' : `Move ${affectedIds.size} objects`;
+
+				this.history.execute(message, ({ isRedo }) => {
+					if (isRedo) {
+						this.ui.moveObjectsByOffset(affectedIds, totalOffset);
+					}
+
+					return () => {
+						this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
+					};
+				});
+			},
+
+			cancel: () => {
+				if (isGestureDone) return;
+				isGestureDone = true;
+				this.activeGesture = null;
+
 				this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
-			};
+			}
 		});
+	}
+
+	private startGesture<T extends Gesture>(gesture: T): T {
+		if (this.activeGesture) {
+			throw new Error('A different gesture is already in progress');
+		}
+
+		this.activeGesture = gesture;
+		return gesture;
 	}
 
 	submitTextAreaLayout(objectId: ID, layout: TextBoxLayout) {
@@ -318,4 +362,13 @@ export class UICommands {
 			};
 		});
 	}
+}
+
+export interface Gesture {
+	submit(): void;
+	cancel(): void;
+}
+
+export interface ObjectTransformGesture extends Gesture {
+	moveObjectsBy(offset: Vector): void;
 }

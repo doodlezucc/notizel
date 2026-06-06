@@ -42,7 +42,7 @@
 	});
 
 	CanvasInputSet.state.actions.escape.handleDownWithRepeats(() => {
-		ui.commands.exitEditingScope();
+		ui.commands.exitCurrentScope();
 	});
 
 	CanvasInputSet.state.actions.undo.handleDownWithRepeats(() => {

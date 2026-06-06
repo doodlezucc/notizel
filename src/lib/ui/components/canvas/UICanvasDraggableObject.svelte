@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Vectors, type ID, type Vector } from '$lib/data/common';
+	import type { ObjectTransformGesture } from '$lib/ui/state/ui-commands';
 	import { UIGeneralEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import { type Snippet } from 'svelte';
@@ -22,8 +23,8 @@
 	let isSelected = $derived(ui.selectedIds.has(objectId));
 
 	interface DraggingContext {
+		gesture: ObjectTransformGesture;
 		previousPointer: Vector;
-		totalOffset: Vector;
 		hasMovedAtAll: boolean;
 	}
 
@@ -34,15 +35,15 @@
 
 		ev.preventDefault();
 
-		activeDragging = {
-			previousPointer: { x: ev.screenX, y: ev.screenY },
-			totalOffset: { x: 0, y: 0 },
-			hasMovedAtAll: false
-		};
-
 		if (!isSelected) {
 			ui.commands.select([objectId], { deselectOthers: !ev.shiftKey });
 		}
+
+		activeDragging = {
+			gesture: ui.commands.startMovingSelection(),
+			previousPointer: { x: ev.screenX, y: ev.screenY },
+			hasMovedAtAll: false
+		};
 	}
 
 	function onPointerMove(ev: PointerEvent) {
@@ -53,20 +54,19 @@
 		const pointerDelta = Vectors.subtract(pointer, activeDragging.previousPointer);
 		const offset = Vectors.scale(pointerDelta, 1 / ui.camera.scale);
 
-		ui.commands.moveSelectionByOffset(offset);
+		activeDragging.gesture.moveObjectsBy(offset);
 
-		activeDragging = {
-			previousPointer: pointer,
-			totalOffset: Vectors.add(activeDragging.totalOffset, offset),
-			hasMovedAtAll: true
-		};
+		activeDragging.previousPointer = pointer;
+		activeDragging.hasMovedAtAll = true;
 	}
 
 	function onPointerUp() {
 		if (!activeDragging) return;
 
 		if (activeDragging.hasMovedAtAll) {
-			ui.commands.submitMoveSelectionByOffset(activeDragging.totalOffset);
+			activeDragging.gesture.submit();
+		} else {
+			activeDragging.gesture.cancel();
 		}
 
 		activeDragging = undefined;
