@@ -2,10 +2,13 @@
  * Returns a minimal HTML document, which includes `data` inside an element's attribute.
  */
 export function encodeStringInHtml(data: string) {
+	const encodedData = btoa(data);
+
 	return `
 <html>
+<head></head>
 <body>
-<span data-embed="${data}"></span>
+<span data-embed="${encodedData}"></span>
 </body>
 </html>
     `;
@@ -24,5 +27,7 @@ export function decodeStringFromHtml(html: string) {
 	const start = html.indexOf('"', validEmbedAttributeStart) + 1;
 	const end = html.lastIndexOf('"');
 
-	return html.substring(start, end);
+	const encodedData = html.substring(start, end);
+
+	return atob(encodedData);
 }
