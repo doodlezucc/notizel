@@ -18,7 +18,8 @@
 			],
 
 			delete: [{ logicalKey: 'Backspace' }, { logicalKey: 'Delete' }],
-			copy: [{ logicalKey: 'C', modifiers: { ctrl: true } }, { logicalKey: 'Copy' }]
+			copy: [{ logicalKey: 'C', modifiers: { ctrl: true } }, { logicalKey: 'Copy' }],
+			cut: [{ logicalKey: 'X', modifiers: { ctrl: true } }, { logicalKey: 'Cut' }]
 		}
 	});
 </script>
@@ -42,6 +43,9 @@
 
 	GeneralEditingInputSet.actions.copy.handleDown(() => {
 		ui.commands.selection.copySelectionToClipboard();
+	});
+	GeneralEditingInputSet.actions.cut.handleDown(() => {
+		ui.commands.selection.cutSelectionToClipboard();
 	});
 
 	CanvasInputSet.state.actions.save.handleDown(() => {

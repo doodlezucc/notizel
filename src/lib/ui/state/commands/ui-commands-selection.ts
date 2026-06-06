@@ -88,7 +88,15 @@ export class UICommandsSelection extends StackUser {
 		});
 	}
 
+	async cutSelectionToClipboard() {
+		await this.writeSelectionToClipboard({ deleteObjects: true });
+	}
+
 	async copySelectionToClipboard() {
+		await this.writeSelectionToClipboard({ deleteObjects: false });
+	}
+
+	private async writeSelectionToClipboard({ deleteObjects }: { deleteObjects: boolean }) {
 		const scope = this.requireGeneralEditingScope();
 		const selectedObjects = this.ui.objects.filter((object) => scope.selectedIds.has(object.id));
 
@@ -102,6 +110,10 @@ export class UICommandsSelection extends StackUser {
 
 			return frozen;
 		});
+
+		if (deleteObjects) {
+			this.deleteSelectedObjects();
+		}
 
 		const clipboardEntryJson = JSON.stringify(frozenCopies);
 		await navigator.clipboard.writeText(clipboardEntryJson);
