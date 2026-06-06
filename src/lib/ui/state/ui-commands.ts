@@ -135,9 +135,18 @@ export class UICommands {
 		});
 	}
 
+	cancelActiveGesture() {
+		if (this.activeGesture) {
+			this.activeGesture.cancel();
+			this.activeGesture = null;
+		}
+	}
+
 	exitCurrentScope() {
 		if (this.activeGesture) {
-			return this.activeGesture.cancel();
+			this.activeGesture.cancel();
+			this.activeGesture = null;
+			return;
 		}
 
 		const scope = this.ui.editingScope;
