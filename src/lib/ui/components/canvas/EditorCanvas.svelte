@@ -20,7 +20,7 @@
 			ui.commands.exitCurrentScope();
 		}}
 		onBackgroundDoubleTap={(ev) => {
-			ui.commands.createTextArea({
+			ui.commands.textObjects.create({
 				alignH: 'center',
 				alignV: 'center',
 				anchor: ev.pointerInCanvasSpace

@@ -36,7 +36,7 @@
 		ev.preventDefault();
 
 		if (!isEditing) {
-			ui.commands.enterTextAreaEditingScope(object.id);
+			ui.commands.textObjects.enterEditing(object.id);
 		}
 	}
 
@@ -82,7 +82,7 @@
 				height: rect.height / ui.camera.scale
 			})}
 			bind:layout={
-				() => layout, (newLayout) => ui.commands.submitTextAreaLayout(object.id, newLayout)
+				() => layout, (newLayout) => ui.commands.textObjects.setTextLayout(object.id, newLayout)
 			}
 			{@attach draggableEvents}
 			{@attach createAttachment()}
