@@ -34,7 +34,7 @@
 		{#each ui.objects as object (object.id)}
 			<UITextAreaObject {object} />
 		{/each}
-
-		<AreaSelection bind:this={areaSelection} />
 	</InfiniteCanvas>
+
+	<AreaSelection bind:this={areaSelection} />
 </EditorCanvasInputScope>

@@ -230,6 +230,8 @@ export class UICommands {
 		let isDone = false;
 
 		return this.startGesture<AreaSelectGesture>({
+			initialPointerPosition: initialPointer,
+
 			updatePointerPosition: (currentPointer) => {
 				const areaBoundingBox = AxisAlignedBoundingBox.fromPoints(initialPointer, currentPointer);
 
@@ -460,6 +462,7 @@ export interface ObjectTransformGesture extends Gesture {
 }
 
 export interface AreaSelectGesture extends Gesture {
+	readonly initialPointerPosition: Vector;
 	updatePointerPosition(clientSpace: Vector): void;
 }
 
