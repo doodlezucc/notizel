@@ -7,7 +7,7 @@ import { UITextAreaEditingScope } from '../ui-editing-scope.svelte';
 
 export class UICommandsTextObjects extends StackUser {
 	create(props: OmitFromUnion<LiveTextCanvasObject, 'id' | 'type' | 'editor'>) {
-		const objectId = crypto.randomUUID(); // Maybe swap this out with a simple incremental ID
+		const objectId = this.stack.liveObjectInstantiator.generateId();
 
 		const newObject: LiveTextCanvasObject = {
 			...props,

@@ -4,6 +4,7 @@
 	import { EmptyPersistence } from '$lib/data/persistence/empty-persistence';
 	import type { VaultFileMeta } from '$lib/data/vault';
 	import { ChangeHistory } from '$lib/packages/history';
+	import type { LiveObjectInstantiator } from './live-objects';
 	import type { DependencyStack } from './stack/dependency-stack';
 	import { StackLiveObjectInstantiator } from './stack/live-object-instantiator';
 	import { StackUser } from './stack/stack-user';
@@ -84,13 +85,15 @@
 
 	let { persistenceApi, children }: Props = $props();
 
+	let liveObjectInstantiator: LiveObjectInstantiator | undefined;
+
 	const dependencyStack: DependencyStack = {
 		domBridge: new UIDOMBridge(),
 		history: new ChangeHistory(),
 		ui: new UIState(),
 		persistence: new EmptyPersistence(),
 		get liveObjectInstantiator() {
-			return new StackLiveObjectInstantiator(dependencyStack);
+			return (liveObjectInstantiator ??= new StackLiveObjectInstantiator(dependencyStack));
 		}
 	};
 

@@ -55,13 +55,6 @@ export class UICommandsClipboard extends StackUser {
 		});
 
 		if (newObjects !== null) {
-			for (const object of newObjects) {
-				// TODO: Add a central point to generate unused IDs
-				// TODO: The central point should be able to generate a BATCH of new IDs,
-				// which must not overlap, in addition to not overlapping with existing objects.
-				object.id = crypto.randomUUID();
-			}
-
 			this.pasteObjects(newObjects);
 		}
 	}
