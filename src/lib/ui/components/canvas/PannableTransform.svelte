@@ -60,6 +60,21 @@
 	}
 
 	function onPointerDown(ev: PointerEvent) {
+		if (ev.defaultPrevented) return;
+
+		ev.preventDefault();
+		if (activeGesture) return;
+
+		if (ev.button !== 0) {
+			activeGesture = {
+				isPanGesture: true,
+				previousPointer: { x: ev.clientX, y: ev.clientY },
+				isClickEvent: true
+			};
+		}
+	}
+
+	function onBackgroundPointerDown(ev: PointerEvent) {
 		ev.preventDefault();
 		if (activeGesture) return;
 
@@ -154,10 +169,12 @@
 			// Lazy initialization after mount to allow some server-side rendering
 			resizeObserver ??= createResizeObserver();
 
+			element.addEventListener('pointerdown', onPointerDown);
 			element.addEventListener('wheel', onWheel);
 			resizeObserver.observe(element);
 
 			return () => {
+				element.removeEventListener('pointerdown', onPointerDown);
 				element.removeEventListener('wheel', onWheel);
 				resizeObserver.unobserve(element);
 			};
@@ -166,11 +183,11 @@
 
 	function createBackgroundAttachment(): Attachment<HTMLElement> {
 		return (element) => {
-			element.addEventListener('pointerdown', onPointerDown);
+			element.addEventListener('pointerdown', onBackgroundPointerDown);
 			element.addEventListener('dblclick', onDoubleClick);
 
 			return () => {
-				element.removeEventListener('pointerdown', onPointerDown);
+				element.removeEventListener('pointerdown', onBackgroundPointerDown);
 				element.removeEventListener('dblclick', onDoubleClick);
 			};
 		};

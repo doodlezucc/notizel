@@ -40,6 +40,11 @@
 	function onPointerDown(ev: PointerEvent) {
 		if (ignoreDragging || !(ui.editingScope instanceof UIGeneralEditingScope)) return;
 
+		if (ev.button !== 0) {
+			// Only handle primary pointer events
+			return;
+		}
+
 		ev.preventDefault();
 
 		if (!isSelected) {
