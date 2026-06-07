@@ -64,8 +64,6 @@
 	.anchor {
 		position: absolute;
 		transform: translate(calc(var(--x) * 1px), calc(var(--y) * 1px));
-
-		outline: 4px solid red;
 		display: grid;
 	}
 </style>
