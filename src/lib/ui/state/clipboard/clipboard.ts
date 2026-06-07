@@ -2,7 +2,6 @@ import type { CanvasObject } from '$lib/data/vault';
 import * as ClipboardHtmlEmbed from '$lib/packages/clipboard-html-embed';
 import {
 	freezeCanvasObject,
-	unfreezeCanvasObject,
 	type LiveCanvasObject,
 	type LiveObjectInstantiator
 } from '../live-objects';
@@ -54,9 +53,7 @@ export async function convertClipboardToObjects(options: ConvertFromClipboardOpt
 		return null;
 	}
 
-	return frozenObjects.map((object) =>
-		unfreezeCanvasObject(object, options.liveObjectInstantiator)
-	);
+	return frozenObjects.map((object) => options.liveObjectInstantiator.unfreezeCanvasObject(object));
 }
 
 async function parseObjectsFromDataTransfer(data: DataTransfer) {

@@ -9,7 +9,7 @@ export type LiveTextCanvasObject = OmitFromUnion<TextCanvasObject, 'content'> & 
 	editor: TiptapEditor;
 };
 
-type ObjectType = CanvasObject['type'] & LiveCanvasObject['type'];
+export type ObjectType = CanvasObject['type'] & LiveCanvasObject['type'];
 
 export interface GenerateIdOptions {
 	/** If specified, this ID is checked first before generating a new one. */
@@ -22,20 +22,10 @@ export interface LiveObjectInstantiator {
 	 */
 	generateId(options?: GenerateIdOptions): ID;
 	createTiptapEditor: (initialContent: TiptapContent) => TiptapEditor;
-}
 
-export function unfreezeCanvasObject<T extends ObjectType>(
-	object: CanvasObject & { type: T },
-	objectInstantiator: LiveObjectInstantiator
-): LiveCanvasObject & { type: T } {
-	switch (object.type) {
-		case 'text':
-			return {
-				...object,
-				id: objectInstantiator.generateId({ preferred: object.id }),
-				editor: objectInstantiator.createTiptapEditor(object.content)
-			};
-	}
+	unfreezeCanvasObject<T extends ObjectType>(
+		object: CanvasObject & { type: T }
+	): LiveCanvasObject & { type: T };
 }
 
 export function freezeCanvasObject<T extends ObjectType>(

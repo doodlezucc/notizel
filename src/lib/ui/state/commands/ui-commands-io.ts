@@ -1,7 +1,6 @@
 import type { ID } from '$lib/data/common';
 import type { CanvasFileData, VaultFileMeta } from '$lib/data/vault';
 import { Temporal } from 'temporal-polyfill';
-import { unfreezeCanvasObject } from '../live-objects';
 import { StackUser } from '../stack/stack-user';
 import { UIGeneralEditingScope } from '../ui-editing-scope.svelte';
 
@@ -62,7 +61,7 @@ export class UICommandsIO extends StackUser {
 		this.ui.fileMeta = meta;
 		this.ui.camera = data.camera;
 		this.ui.objects = data.objects.map((object) =>
-			unfreezeCanvasObject(object, this.stack.liveObjectInstantiator)
+			this.stack.liveObjectInstantiator.unfreezeCanvasObject(object)
 		);
 		this.ui.editingScope = new UIGeneralEditingScope([]);
 	}

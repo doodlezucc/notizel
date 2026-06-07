@@ -1,7 +1,13 @@
 import type { ID } from '$lib/data/common';
+import type { CanvasObject } from '$lib/data/vault';
 import type { Content as TiptapContent } from '@tiptap/core';
 import { nanoid } from 'nanoid';
-import type { GenerateIdOptions, LiveObjectInstantiator } from '../live-objects';
+import type {
+	GenerateIdOptions,
+	LiveCanvasObject,
+	LiveObjectInstantiator,
+	ObjectType
+} from '../live-objects';
 import { createTiptapEditor } from '../tiptap/editor';
 import { StackUser } from './stack-user';
 
@@ -33,5 +39,18 @@ export class StackLiveObjectInstantiator extends StackUser implements LiveObject
 			initialContent,
 			registerHistoryChange: (change) => this.history.execute('Edit text', change)
 		});
+	}
+
+	unfreezeCanvasObject<T extends ObjectType>(
+		object: CanvasObject & { type: T }
+	): LiveCanvasObject & { type: T } {
+		switch (object.type) {
+			case 'text':
+				return {
+					...object,
+					id: this.generateId({ preferred: object.id }),
+					editor: this.createTiptapEditor(object.content)
+				};
+		}
 	}
 }
