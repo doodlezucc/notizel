@@ -1,4 +1,6 @@
-import { freezeCanvasObject, type LiveCanvasObject } from '../live-objects';
+import type { ID } from '$lib/data/common';
+import { convertClipboardToObjects, convertObjectsToClipboard } from '../clipboard/clipboard';
+import { type LiveCanvasObject } from '../live-objects';
 import { StackUser } from '../stack/stack-user';
 
 export class UICommandsClipboard extends StackUser {
@@ -18,7 +20,10 @@ export class UICommandsClipboard extends StackUser {
 			return;
 		}
 
-		const clipboardItem = this.convertObjectsToClipboard(selectedObjects);
+		const clipboardItem = convertObjectsToClipboard({
+			objects: selectedObjects,
+			domBridge: this.stack.domBridge
+		});
 
 		if (deleteObjects) {
 			this.deleteObjectsViaCut(selectedObjects);
@@ -43,36 +48,39 @@ export class UICommandsClipboard extends StackUser {
 		});
 	}
 
-	private convertObjectsToClipboard(objects: LiveCanvasObject[]): ClipboardItem {
-		const frozenObjects = objects.map(freezeCanvasObject);
-
-		const textObjects = objects
-			.filter((object) => object.type === 'text')
-			.map((object) => {
-				const domHandle = this.stack.domBridge.getHandle(object.id);
-
-				const centerOfTextArea = domHandle?.computeBoundsInClientSpace().center ?? object.anchor;
-
-				return { object, centerOfTextArea };
-			});
-
-		// Sort text objects by their vertical center for a somewhat
-		// coherent order in the plain text clipboard.
-		textObjects.sort((a, b) => {
-			return a.centerOfTextArea.y - b.centerOfTextArea.y;
+	async pasteFromClipboard(data: DataTransfer) {
+		const newObjects = await convertClipboardToObjects({
+			clipboardData: data,
+			liveObjectInstantiator: this.stack.liveObjectInstantiator
 		});
 
-		const clipboardItemText = textObjects.map(({ object }) => object.editor.getText()).join('\n');
+		if (newObjects !== null) {
+			for (const object of newObjects) {
+				// TODO: Add a central point to generate unused IDs
+				// TODO: The central point should be able to generate a BATCH of new IDs,
+				// which must not overlap, in addition to not overlapping with existing objects.
+				object.id = crypto.randomUUID();
+			}
 
-		// This is of course not valid HTML. But other MIME types like "application/json" may not be
-		// supported by all browsers.
-		// Figma embeds some encoded data inside HTML comments, which seems like it's more safe.
-		// But for now this simply puts a JSON string into the HTML clipboard item.
-		const clipboardItemHtml = JSON.stringify(frozenObjects);
+			this.pasteObjects(newObjects);
+		}
+	}
 
-		return new ClipboardItem({
-			'text/plain': clipboardItemText,
-			'text/html': clipboardItemHtml
+	private pasteObjects(newObjects: LiveCanvasObject[]) {
+		const scope = this.requireGeneralEditingScope();
+		const previousSelection = new Set(scope.selectedIds);
+
+		const newIds = new Set<ID>(newObjects.map((object) => object.id));
+
+		this.history.execute('Paste from clipboard', () => {
+			this.requireGeneralEditingScope();
+			this.ui.objects.push(...newObjects);
+			this.ui.applySelection(newIds);
+
+			return () => {
+				this.ui.applySelection(previousSelection);
+				this.ui.objects = this.ui.objects.filter((object) => !newIds.has(object.id));
+			};
 		});
 	}
 }
