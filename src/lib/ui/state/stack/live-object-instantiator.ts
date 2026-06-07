@@ -1,5 +1,6 @@
 import type { ID } from '$lib/data/common';
 import type { Content as TiptapContent } from '@tiptap/core';
+import { nanoid } from 'nanoid';
 import type { GenerateIdOptions, LiveObjectInstantiator } from '../live-objects';
 import { createTiptapEditor } from '../tiptap/editor';
 import { StackUser } from './stack-user';
@@ -12,7 +13,7 @@ export class StackLiveObjectInstantiator extends StackUser implements LiveObject
 	}
 
 	private static generateAnyId(): ID {
-		return crypto.randomUUID(); // Maybe swap this out with a simple incremental ID
+		return nanoid(7);
 	}
 
 	generateId(options: GenerateIdOptions = {}): ID {

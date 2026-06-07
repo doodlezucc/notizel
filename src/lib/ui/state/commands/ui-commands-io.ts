@@ -14,7 +14,7 @@ export class UICommandsIO extends StackUser {
 		const now = Temporal.Now.instant();
 
 		if (!this.ui.fileMeta) {
-			const newFileId = this.persistence.generateFileId();
+			const newFileId = this.generateFreeFileId();
 
 			const meta: VaultFileMeta = {
 				id: newFileId,
@@ -33,6 +33,17 @@ export class UICommandsIO extends StackUser {
 			await this.persistence.saveFileMeta(meta);
 			await this.persistence.saveFile(meta.id, this.ui.toFileData());
 		}
+	}
+
+	private generateFreeFileId() {
+		let id = this.persistence.generateFileId();
+
+		const existingIds = new Set(this.ui.vault.files.map((file) => file.id));
+		while (existingIds.has(id)) {
+			id = this.persistence.generateFileId();
+		}
+
+		return id;
 	}
 
 	async loadFile(fileId: ID) {

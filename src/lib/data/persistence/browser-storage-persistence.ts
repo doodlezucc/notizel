@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid';
 import type { ID } from '../common';
 import type { CanvasFileData, Vault, VaultFileMeta } from '../vault';
 import type { PersistenceAPI } from './api';
@@ -17,7 +18,7 @@ export class BrowserStoragePersistence implements PersistenceAPI {
 	}
 
 	generateFileId(): ID {
-		return crypto.randomUUID();
+		return nanoid(7);
 	}
 
 	async loadVault(): Promise<Vault> {
@@ -63,7 +64,6 @@ export class BrowserStoragePersistence implements PersistenceAPI {
 
 	async saveFile(fileId: ID, data: CanvasFileData): Promise<void> {
 		const key = getFileKey(fileId);
-		console.log(data);
 		this.storage.setItem(key, JSON.stringify(data));
 	}
 }
