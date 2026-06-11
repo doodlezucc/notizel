@@ -62,10 +62,10 @@
 	function onPointerDown(ev: PointerEvent) {
 		if (ev.defaultPrevented) return;
 
-		ev.preventDefault();
-		if (activeGesture) return;
-
 		if (ev.button !== 0) {
+			ev.preventDefault();
+			if (activeGesture) return;
+
 			activeGesture = {
 				isPanGesture: true,
 				previousPointer: { x: ev.clientX, y: ev.clientY },
