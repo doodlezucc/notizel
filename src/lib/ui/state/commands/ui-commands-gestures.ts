@@ -10,6 +10,7 @@ import {
 	type CreateGestureOptions,
 	type ObjectTransformGestureHandle
 } from '../gestures/gestures';
+import { freezeCanvasObject } from '../live-objects';
 import { StackUser } from '../stack/stack-user';
 
 export class UICommandsGestures extends StackUser {
@@ -111,6 +112,55 @@ export class UICommandsGestures extends StackUser {
 
 			onCancel: () => {
 				this.ui.moveObjectsByOffset(affectedIds, Vectors.negate(totalOffset));
+			}
+		});
+	}
+
+	startMovingSelectedObjectsAsDuplicates() {
+		const scope = this.requireGeneralEditingScope();
+		const previousSelection = new Set(scope.selectedIds);
+
+		let newObjects = this.ui.objects
+			.filter((object) => previousSelection.has(object.id))
+			.map((object) => freezeCanvasObject(object))
+			.map((frozenObject) => this.stack.liveObjectInstantiator.unfreezeCanvasObject(frozenObject));
+
+		const newIds = new Set(newObjects.map((object) => object.id));
+
+		this.ui.objects.push(...newObjects);
+		this.ui.applySelection(newIds);
+
+		return this.startGesture<ObjectTransformGestureHandle>({
+			createHandle: (gesture) => ({
+				moveObjectsBy: (offset) => {
+					if (gesture.isComplete()) return;
+
+					this.ui.moveObjectsByOffset(newIds, offset);
+				}
+			}),
+
+			onComplete: () => {
+				// Update latest object changes for later redo.
+				newObjects = this.ui.objects.filter((object) => newIds.has(object.id));
+
+				const message = newIds.size === 1 ? 'Duplicate object' : `Duplicate ${newIds.size} objects`;
+
+				this.history.execute(message, ({ isRedo }) => {
+					if (isRedo) {
+						this.ui.objects.push(...newObjects);
+						this.ui.applySelection(newIds);
+					}
+
+					return () => {
+						this.ui.objects = this.ui.objects.filter((object) => !newIds.has(object.id));
+						this.ui.applySelection(previousSelection);
+					};
+				});
+			},
+
+			onCancel: () => {
+				this.ui.objects = this.ui.objects.filter((object) => !newIds.has(object.id));
+				this.ui.applySelection(previousSelection);
 			}
 		});
 	}

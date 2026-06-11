@@ -20,7 +20,9 @@
 
 			delete: [{ logicalKey: 'Backspace' }, { logicalKey: 'Delete' }],
 			copy: [{ logicalKey: 'C', modifiers: { ctrl: true } }, { logicalKey: 'Copy' }],
-			cut: [{ logicalKey: 'X', modifiers: { ctrl: true } }, { logicalKey: 'Cut' }]
+			cut: [{ logicalKey: 'X', modifiers: { ctrl: true } }, { logicalKey: 'Cut' }],
+
+			modifierDuplicate: [{ logicalKey: 'Alt' }]
 		}
 	});
 </script>

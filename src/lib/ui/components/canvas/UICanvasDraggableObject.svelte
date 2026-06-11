@@ -10,6 +10,7 @@
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import { onMount, type Snippet } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
+	import { CanvasInputSet } from './EditorCanvasInputScope.svelte';
 
 	interface ChildContext {
 		isInAreaSelection: boolean;
@@ -30,6 +31,7 @@
 	let isSelected = $derived(ui.selectedIds.has(objectId));
 
 	interface DraggingContext {
+		isDuplicationGesture: boolean;
 		gesture: ControlledGestureHandle<ObjectTransformGestureHandle>;
 		previousPointer: Vector;
 		hasMovedAtAll: boolean;
@@ -51,8 +53,13 @@
 			ui.commands.selection.select([objectId], { deselectOthers: !ev.shiftKey });
 		}
 
+		const isDuplicationGesture = CanvasInputSet.state.actions.modifierDuplicate.isPressed;
+
 		activeDragging = {
-			gesture: ui.commands.gestures.startMovingSelectedObjects(),
+			isDuplicationGesture,
+			gesture: isDuplicationGesture
+				? ui.commands.gestures.startMovingSelectedObjectsAsDuplicates()
+				: ui.commands.gestures.startMovingSelectedObjects(),
 			previousPointer: { x: ev.screenX, y: ev.screenY },
 			hasMovedAtAll: false
 		};
@@ -75,7 +82,8 @@
 	function onPointerUp() {
 		if (!activeDragging) return;
 
-		if (activeDragging.hasMovedAtAll) {
+		// Duplicating objects should complete even if the new objects were not moved at all.
+		if (activeDragging.hasMovedAtAll || activeDragging.isDuplicationGesture) {
 			activeDragging.gesture.complete();
 		} else {
 			activeDragging.gesture.cancel();
