@@ -10,6 +10,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
+	<title>notizel</title>
 </svelte:head>
 
 <PortalOverlay>
