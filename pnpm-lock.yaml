@@ -78,8 +78,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0(svelte@5.55.10(@typescript-eslint/types@8.60.0))(typescript@6.0.3)
       svelte-tether:
-        specifier: ^0.2.1
-        version: 0.2.1(svelte@5.55.10(@typescript-eslint/types@8.60.0))
+        specifier: ^0.3.0
+        version: 0.3.0(svelte@5.55.10(@typescript-eslint/types@8.60.0))
       temporal-polyfill:
         specifier: ^0.3.2
         version: 0.3.2
@@ -1682,8 +1682,8 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
 
-  svelte-tether@0.2.1:
-    resolution: {integrity: sha512-OrCdE9e+voSaeg6SxRQXZXDWH4J2L700O7YHC67LwntA/q83dTJ3BsF/WFwVN3SCIM8bKgacVUe/NZVq9xwcfg==}
+  svelte-tether@0.3.0:
+    resolution: {integrity: sha512-sJrJCHiVipI9M6J08zFvjS+P/Nhz7OdgOEaCarHe2MmEhDpJGcvBptE9kigpGDidsalW8z9vHGN9PSWD/TZVXQ==}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -3369,7 +3369,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  svelte-tether@0.2.1(svelte@5.55.10(@typescript-eslint/types@8.60.0)):
+  svelte-tether@0.3.0(svelte@5.55.10(@typescript-eslint/types@8.60.0)):
     dependencies:
       svelte: 5.55.10(@typescript-eslint/types@8.60.0)
 
