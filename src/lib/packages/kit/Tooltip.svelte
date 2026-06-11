@@ -25,6 +25,9 @@
 
 <style lang="scss">
 	[role='tooltip'] {
+		user-select: none;
+		pointer-events: none;
+
 		padding: 4px 12px;
 		background-color: black;
 		color: white;

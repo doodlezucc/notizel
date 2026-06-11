@@ -60,6 +60,7 @@
 
 <style lang="scss">
 	.toolbar {
+		pointer-events: none;
 		display: flex;
 		gap: 4px;
 
