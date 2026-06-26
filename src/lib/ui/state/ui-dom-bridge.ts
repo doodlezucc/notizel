@@ -1,4 +1,5 @@
-import type { BoundingBox, ID } from '$lib/data/common';
+import type { ID } from '$lib/data/common';
+import type { MountedObject } from './dom-bridge/object';
 
 export class UIDOMBridge {
 	private readonly mountedObjects = new Map<ID, MountedObject>();
@@ -18,8 +19,4 @@ export class UIDOMBridge {
 	unregisterMountedObject(objectId: ID) {
 		this.mountedObjects.delete(objectId);
 	}
-}
-
-export interface MountedObject {
-	computeBoundsInClientSpace(): BoundingBox;
 }

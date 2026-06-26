@@ -12,31 +12,11 @@
 		justify: 'start'
 	};
 
-	const horizontalAlignmentCenterOffset: Record<FixedWidthTextAlignment, number> = {
-		start: 0.5,
-		center: 0,
-		end: -0.5,
-		justify: 0.5
-	};
-
 	const verticalAlignItemsValue: Record<VerticalAlignment, LogicalAlignment> = {
 		top: 'start',
 		center: 'center',
 		bottom: 'end'
 	};
-	const verticalAlignmentCenterOffset: Record<VerticalAlignment, number> = {
-		top: 0.5,
-		center: 0,
-		bottom: -0.5
-	};
-
-	export function getHorizontalCenterOffsetFraction(alignment: FixedWidthTextAlignment) {
-		return horizontalAlignmentCenterOffset[alignment];
-	}
-
-	export function getVerticalCenterOffsetFraction(alignment: VerticalAlignment) {
-		return verticalAlignmentCenterOffset[alignment];
-	}
 </script>
 
 <script lang="ts">

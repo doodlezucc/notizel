@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { Vectors, type ID, type Vector } from '$lib/data/common';
+	import type { MountedObject } from '$lib/ui/state/dom-bridge/object';
 	import {
 		AreaSelectGestureState,
 		type ControlledGestureHandle,
 		type ObjectTransformGestureHandle
 	} from '$lib/ui/state/gestures/gestures';
-	import type { MountedObject } from '$lib/ui/state/ui-dom-bridge';
 	import { UIGeneralEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import { onMount, type Snippet } from 'svelte';

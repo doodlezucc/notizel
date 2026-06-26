@@ -1,14 +1,13 @@
 <script lang="ts">
-	import { AxisAlignedBoundingBox, type Vector } from '$lib/data/common';
 	import { extractLayout } from '$lib/data/text-box-layout';
+	import { MountedTextArea } from '$lib/ui/state/dom-bridge/text-area';
 	import type { LiveTextCanvasObject } from '$lib/ui/state/live-objects';
-	import type { MountedObject } from '$lib/ui/state/ui-dom-bridge';
 	import { UITextAreaEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import { untrack } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import UICanvasDraggableObject from '../canvas/UICanvasDraggableObject.svelte';
-	import TextAreaObject from './TextAreaObject.svelte';
+	import TextAreaObject, { type TextAreaObjectController } from './TextAreaObject.svelte';
 
 	interface Props {
 		object: LiveTextCanvasObject;
@@ -51,19 +50,26 @@
 		};
 	}
 
-	const mountedObject: MountedObject = {
-		computeBoundsInClientSpace: () => {
-			const clientRect = textArea.getAxisAlignedBoundingClientRect();
+	const mountedObject = new MountedTextArea({
+		get container() {
+			return textArea!.getContainer()!;
+		},
+		get layout() {
+			return extractLayout(object);
+		},
+		get uiScale() {
+			return ui.camera.scale;
+		}
+	});
 
-			const clientRectCenter: Vector = {
-				x: clientRect.left + clientRect.width / 2,
-				y: clientRect.top + clientRect.height / 2
-			};
-
-			return AxisAlignedBoundingBox.fromCenter(clientRectCenter, {
-				width: clientRect.width,
-				height: clientRect.height
-			});
+	const controller: TextAreaObjectController = {
+		setHorizontalAlignment: (alignment) => {
+			const newLayout = mountedObject.computeHorizontalAlignmentChange(alignment);
+			ui.commands.textObjects.setTextLayout(object.id, newLayout);
+		},
+		setVerticalAlignment: (alignment) => {
+			const newLayout = mountedObject.computeVerticalAlignmentChange(alignment);
+			ui.commands.textObjects.setTextLayout(object.id, newLayout);
 		}
 	};
 </script>
@@ -75,14 +81,8 @@
 			editor={object.editor}
 			isSelected={isSelected || isInAreaSelection}
 			{isEditing}
-			computeSize={(rect) => ({
-				width: rect.width / ui.camera.scale,
-				height: rect.height / ui.camera.scale
-			})}
-			bind:layout={
-				() => extractLayout(object),
-				(newLayout) => ui.commands.textObjects.setTextLayout(object.id, newLayout)
-			}
+			layout={extractLayout(object)}
+			{controller}
 			{@attach draggableEvents}
 			{@attach createAttachment()}
 		/>
