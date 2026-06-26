@@ -60,6 +60,8 @@
 </ObjectAnchor>
 
 <style lang="scss">
+	@use '$lib/ui/style/scheme.scss';
+
 	.text-area {
 		position: absolute;
 		width: var(--w, max-content);
@@ -73,7 +75,7 @@
 		}
 
 		&.editing {
-			outline: 2px solid #55f;
+			outline: 2px solid scheme.$primary;
 		}
 	}
 </style>

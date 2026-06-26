@@ -71,6 +71,8 @@
 {/if}
 
 <style lang="scss">
+	@use '$lib/ui/style/scheme.scss';
+
 	.area {
 		position: absolute;
 		left: var(--x);
@@ -78,7 +80,7 @@
 		width: var(--w);
 		height: var(--h);
 
-		outline: 1px solid #ff4444;
-		background-color: #ff444422;
+		outline: 1px solid scheme.$primary;
+		background-color: hsla(from scheme.$primary h s l / 0.15);
 	}
 </style>

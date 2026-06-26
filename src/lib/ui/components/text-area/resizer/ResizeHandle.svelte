@@ -11,19 +11,20 @@
 </div>
 
 <style lang="scss">
+	@use '$lib/ui/style/scheme.scss';
+
 	.hitbox {
 		cursor: ew-resize;
 
 		position: absolute;
 		width: 16px;
 		transform: translateX(-50%);
-		// background-color: #f555;
 		display: grid;
 		place-items: center;
 
 		&:hover {
 			.highlight {
-				background-color: red;
+				background-color: scheme.$primary;
 			}
 		}
 	}

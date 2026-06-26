@@ -26,6 +26,8 @@
 </Tooltip>
 
 <style lang="scss">
+	@use '$lib/ui/style/scheme.scss';
+
 	$size: 36px;
 
 	button {
@@ -38,7 +40,7 @@
 
 		border: none;
 		border-radius: 8px;
-		background-color: #f2f2f2;
+		background-color: scheme.$background-interactable;
 		width: $size;
 		height: $size;
 		box-shadow: 0px 1px 1px #0008;

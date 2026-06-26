@@ -35,6 +35,8 @@
 </div>
 
 <style lang="scss">
+	@use '$lib/ui/style/scheme.scss';
+
 	.background {
 		position: relative;
 		background-color: transparent;
@@ -45,6 +47,6 @@
 	}
 
 	path {
-		fill: #ff9d9d27;
+		fill: scheme.$background-pattern;
 	}
 </style>
