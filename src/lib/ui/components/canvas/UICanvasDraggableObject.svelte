@@ -31,6 +31,7 @@
 	let isSelected = $derived(ui.selectedIds.has(objectId));
 
 	interface DraggingContext {
+		isStartOfSelection: boolean;
 		isDuplicationGesture: boolean;
 		gesture: ControlledGestureHandle<ObjectTransformGestureHandle>;
 		previousPointer: Vector;
@@ -49,6 +50,7 @@
 
 		ev.preventDefault();
 
+		const isStartOfSelection = !isSelected;
 		if (!isSelected) {
 			ui.commands.selection.select([objectId], { deselectOthers: !ev.shiftKey });
 		}
@@ -56,6 +58,7 @@
 		const isDuplicationGesture = CanvasInputSet.state.actions.modifierDuplicate.isPressed;
 
 		activeDragging = {
+			isStartOfSelection,
 			isDuplicationGesture,
 			gesture: isDuplicationGesture
 				? ui.commands.gestures.startMovingSelectedObjectsAsDuplicates()
@@ -79,7 +82,7 @@
 		activeDragging.hasMovedAtAll = true;
 	}
 
-	function onPointerUp() {
+	function onPointerUp(ev: PointerEvent) {
 		if (!activeDragging) return;
 
 		// Duplicating objects should complete even if the new objects were not moved at all.
@@ -87,6 +90,16 @@
 			activeDragging.gesture.complete();
 		} else {
 			activeDragging.gesture.cancel();
+
+			if (!activeDragging.hasMovedAtAll && !activeDragging.isStartOfSelection) {
+				if (ev.shiftKey) {
+					// CLICKING on an ALREADY SELECTED object while holding down shift deselects the object.
+					ui.commands.selection.deselect(objectId);
+				} else {
+					// CLICKING on an ALREADY SELECTED object without shift deselects all other objects.
+					ui.commands.selection.select([objectId], { deselectOthers: true });
+				}
+			}
 		}
 
 		activeDragging = undefined;
