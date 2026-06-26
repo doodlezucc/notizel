@@ -5,11 +5,31 @@
 		pointerInClientSpace: Vector;
 		pointerInCanvasSpace: Vector;
 	}
+
+	interface PannableTransformContext {
+		handleWheelEvent: (ev: WheelEvent) => void;
+	}
+
+	const [getPannableTransformContext, setPannableTransformContext] =
+		createContext<PannableTransformContext>();
+
+	export const forwardPannableTransformEvents: Attachment<HTMLElement> = (element) => {
+		const pannableTransform = getPannableTransformContext();
+
+		function onWheel(ev: WheelEvent) {
+			pannableTransform.handleWheelEvent(ev);
+		}
+
+		element.addEventListener('wheel', onWheel);
+		return () => {
+			element.removeEventListener('wheel', onWheel);
+		};
+	};
 </script>
 
 <script lang="ts">
 	import { Vectors, type CameraTransform } from '$lib/data/common';
-	import { type Snippet } from 'svelte';
+	import { createContext, type Snippet } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 
 	interface ChildContext {
@@ -152,6 +172,10 @@
 			scale: newScale
 		};
 	}
+
+	setPannableTransformContext({
+		handleWheelEvent: onWheel
+	});
 
 	let resizeObserver!: ResizeObserver;
 

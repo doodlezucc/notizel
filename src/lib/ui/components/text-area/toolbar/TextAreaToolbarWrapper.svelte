@@ -2,6 +2,7 @@
 	import type { TextBoxAlignment } from '$lib/data/text-box-layout';
 	import type { Snippet } from 'svelte';
 	import { Tether } from 'svelte-tether';
+	import { forwardPannableTransformEvents } from '../../canvas/PannableTransform.svelte';
 	import type { TextAreaObjectController } from '../TextAreaObject.svelte';
 	import TextAreaToolbar from './TextAreaToolbar.svelte';
 
@@ -17,6 +18,6 @@
 
 <Tether {children} origin="top-left" direction="bottom-left" measureAnchor={visible}>
 	{#snippet portal()}
-		<TextAreaToolbar {visible} {controller} {alignment} />
+		<TextAreaToolbar {visible} {controller} {alignment} {@attach forwardPannableTransformEvents} />
 	{/snippet}
 </Tether>

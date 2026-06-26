@@ -29,13 +29,13 @@
 		visible: boolean;
 	}
 
-	let { controller, alignment, visible }: Props = $props();
+	let { controller, alignment, visible, ...attachments }: Props = $props();
 
 	const horizontal: FixedWidthTextAlignment[] = ['start', 'center', 'end', 'justify'];
 	const vertical: VerticalAlignment[] = ['top', 'center', 'bottom'];
 </script>
 
-<div class="toolbar" class:visible>
+<div class="toolbar" class:visible {...attachments}>
 	<IconButton
 		icon={horizontalIcons[alignment.alignH]}
 		preventFocusOnClick

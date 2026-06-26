@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { Tether } from 'svelte-tether';
+	import { forwardPannableTransformEvents } from '../../canvas/PannableTransform.svelte';
 	import ResizeHandle from './ResizeHandle.svelte';
 
 	export interface ResizeContext {
@@ -19,7 +20,7 @@
 
 <Tether {children} origin="top-center" direction="bottom-center" inheritWidth inheritHeight>
 	{#snippet portal()}
-		<div class="handles">
+		<div class="handles" {@attach forwardPannableTransformEvents}>
 			{#if !disabled}
 				<ResizeHandle onPointerDown={(event) => onResizeStart({ side: 'left', event })} />
 				<ResizeHandle onPointerDown={(event) => onResizeStart({ side: 'right', event })} />
