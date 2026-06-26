@@ -5,6 +5,13 @@ export class UICommandsSelection extends StackUser {
 	select(ids: Iterable<ID>, { deselectOthers }: { deselectOthers: boolean }) {
 		const idsToSelect = new Set(ids);
 
+		for (const object of this.ui.objects) {
+			if (object.type === 'text' && idsToSelect.has(object.id)) {
+				this.ui.inferDefaultTextAreaAlignmentFrom(object);
+				break;
+			}
+		}
+
 		this.registerSelectionChange('Select', (currentSelection) => {
 			if (deselectOthers) {
 				return idsToSelect;

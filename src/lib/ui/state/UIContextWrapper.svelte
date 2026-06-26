@@ -64,6 +64,10 @@
 
 		readonly objects = $derived.by(() => this.ui.objects);
 		readonly editingScope = $derived.by(() => this.ui.editingScope);
+		readonly defaultAlignmentForNewTextArea = $derived.by(
+			() => this.ui.defaultAlignmentForNewTextArea
+		);
+
 		readonly selectedIds = $derived.by<ReadonlySet<ID>>(() => {
 			const scope = this.editingScope;
 			if (scope instanceof UIGeneralEditingScope) {

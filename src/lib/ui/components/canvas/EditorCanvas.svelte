@@ -21,8 +21,8 @@
 		}}
 		onBackgroundDoubleTap={(ev) => {
 			ui.commands.textObjects.create({
-				alignH: 'center',
-				alignV: 'center',
+				alignH: ui.defaultAlignmentForNewTextArea.alignH,
+				alignV: ui.defaultAlignmentForNewTextArea.alignV,
 				anchor: ev.pointerInCanvasSpace
 			});
 		}}

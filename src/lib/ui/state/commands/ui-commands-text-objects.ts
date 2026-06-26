@@ -52,9 +52,11 @@ export class UICommandsTextObjects extends StackUser {
 
 		this.history.execute('Change textbox layout', () => {
 			Object.assign(textObject, layout);
+			this.ui.inferDefaultTextAreaAlignmentFrom(layout);
 
 			return () => {
 				Object.assign(textObject, previousLayout);
+				this.ui.inferDefaultTextAreaAlignmentFrom(previousLayout);
 			};
 		});
 	}
