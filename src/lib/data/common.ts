@@ -17,3 +17,5 @@ export interface CameraTransform {
 	position: Vector;
 	scale: number;
 }
+
+export type HorizontalDirection = 'left' | 'right';

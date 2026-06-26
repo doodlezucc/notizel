@@ -10,6 +10,8 @@
 	import type { TextBoxLayout } from '$lib/data/text-box-layout';
 	import type { Editor as TiptapEditor } from '@tiptap/core';
 	import ObjectAnchor from './ObjectAnchor.svelte';
+	import type { ResizeContext } from './resizer/ResizeHandleWrapper.svelte';
+	import ResizeHandleWrapper from './resizer/ResizeHandleWrapper.svelte';
 	import TiptapArea from './TiptapArea.svelte';
 	import TextAreaToolbarWrapper from './toolbar/TextAreaToolbarWrapper.svelte';
 
@@ -17,11 +19,13 @@
 		editor: TiptapEditor;
 		layout: TextBoxLayout;
 		controller: TextAreaObjectController;
+		onResizeStart: (context: ResizeContext) => void;
 		isSelected: boolean;
 		isEditing: boolean;
 	}
 
-	let { editor, controller, layout, isSelected, isEditing, ...attachments }: Props = $props();
+	let { editor, layout, controller, onResizeStart, isSelected, isEditing, ...attachments }: Props =
+		$props();
 
 	let { anchor, alignH, alignV, fixedWidth } = $derived(layout);
 
@@ -39,17 +43,19 @@
 
 <ObjectAnchor {anchor} {alignH} {alignV}>
 	<TextAreaToolbarWrapper visible={isSelected || isEditing} alignment={layout} {controller}>
-		<div
-			class="text-area"
-			bind:this={container}
-			style:--w={fixedWidth !== undefined ? `${fixedWidth}px` : undefined}
-			style:text-align={alignH}
-			class:selected={isSelected}
-			class:editing={isEditing}
-			{...attachments}
-		>
-			<TiptapArea bind:this={tiptapArea} {editor} disableInteraction={!isEditing} />
-		</div>
+		<ResizeHandleWrapper {onResizeStart} disabled={isEditing || !isSelected}>
+			<div
+				class="text-area"
+				bind:this={container}
+				style:--w={fixedWidth !== undefined ? `${fixedWidth}px` : undefined}
+				style:text-align={alignH}
+				class:selected={isSelected}
+				class:editing={isEditing}
+				{...attachments}
+			>
+				<TiptapArea bind:this={tiptapArea} {editor} disableInteraction={!isEditing} />
+			</div>
+		</ResizeHandleWrapper>
 	</TextAreaToolbarWrapper>
 </ObjectAnchor>
 

@@ -1,12 +1,17 @@
 <script lang="ts">
 	import { extractLayout } from '$lib/data/text-box-layout';
 	import { MountedTextArea } from '$lib/ui/state/dom-bridge/text-area';
+	import type {
+		ControlledGestureHandle,
+		TextAreaResizeGestureHandle
+	} from '$lib/ui/state/gestures/gestures';
 	import type { LiveTextCanvasObject } from '$lib/ui/state/live-objects';
 	import { UITextAreaEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import { untrack } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import UICanvasDraggableObject from '../canvas/UICanvasDraggableObject.svelte';
+	import type { ResizeContext } from './resizer/ResizeHandleWrapper.svelte';
 	import TextAreaObject, { type TextAreaObjectController } from './TextAreaObject.svelte';
 
 	interface Props {
@@ -62,6 +67,26 @@
 		}
 	});
 
+	let gesture: ControlledGestureHandle<TextAreaResizeGestureHandle> | undefined;
+
+	function onResizeStart(context: ResizeContext) {
+		context.event.preventDefault();
+		gesture = ui.commands.gestures.startResizingSelectedTextAreas(context.side);
+	}
+
+	function onPointerMove(ev: PointerEvent) {
+		if (gesture) {
+			gesture.resizeBy(ev.movementX / ui.camera.scale);
+		}
+	}
+
+	function onPointerUp() {
+		if (gesture) {
+			gesture.complete();
+			gesture = undefined;
+		}
+	}
+
 	const controller: TextAreaObjectController = {
 		setHorizontalAlignment: (alignment) => {
 			const newLayout = mountedObject.computeHorizontalAlignmentChange(alignment);
@@ -74,15 +99,18 @@
 	};
 </script>
 
+<svelte:window onpointermove={onPointerMove} onpointerup={onPointerUp} />
+
 <UICanvasDraggableObject objectId={object.id} ignoreDragging={isEditing} {mountedObject}>
 	{#snippet content({ isInAreaSelection, draggableEvents })}
 		<TextAreaObject
 			bind:this={textArea}
 			editor={object.editor}
-			isSelected={isSelected || isInAreaSelection}
-			{isEditing}
 			layout={extractLayout(object)}
 			{controller}
+			{onResizeStart}
+			isSelected={isSelected || isInAreaSelection}
+			{isEditing}
 			{@attach draggableEvents}
 			{@attach createAttachment()}
 		/>

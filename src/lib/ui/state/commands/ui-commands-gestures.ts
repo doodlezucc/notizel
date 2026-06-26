@@ -1,4 +1,12 @@
-import { AxisAlignedBoundingBox, Vectors, type Vector } from '$lib/data/common';
+import {
+	AxisAlignedBoundingBox,
+	Vectors,
+	type HorizontalDirection,
+	type ID,
+	type Vector
+} from '$lib/data/common';
+import { extractLayout, type TextBoxLayout } from '$lib/data/text-box-layout';
+import { MountedTextArea } from '../dom-bridge/text-area';
 import {
 	AreaSelectGestureStateImpl,
 	type ObjectAreaSelectInformation
@@ -8,9 +16,10 @@ import {
 	type AreaSelectGestureHandle,
 	type ControlledGestureHandle,
 	type CreateGestureOptions,
-	type ObjectTransformGestureHandle
+	type ObjectTransformGestureHandle,
+	type TextAreaResizeGestureHandle
 } from '../gestures/gestures';
-import { freezeCanvasObject } from '../live-objects';
+import { freezeCanvasObject, type LiveTextCanvasObject } from '../live-objects';
 import { StackUser } from '../stack/stack-user';
 
 export class UICommandsGestures extends StackUser {
@@ -161,6 +170,106 @@ export class UICommandsGestures extends StackUser {
 			onCancel: () => {
 				this.ui.objects = this.ui.objects.filter((object) => !newIds.has(object.id));
 				this.ui.applySelection(previousSelection);
+			}
+		});
+	}
+
+	startResizingSelectedTextAreas(side: HorizontalDirection) {
+		const scope = this.requireGeneralEditingScope();
+		const textAreaObjects = this.ui.objects.filter(
+			(object) => object.type === 'text' && scope.selectedIds.has(object.id)
+		);
+
+		if (textAreaObjects.length === 0) {
+			throw new Error('No text areas are currently selected');
+		}
+
+		const originalLayouts = new Map<ID, TextBoxLayout>();
+		const newLayouts = new Map<ID, TextBoxLayout>();
+		const affectedObjectPairs: {
+			liveObject: LiveTextCanvasObject;
+			mountedObject: MountedTextArea;
+		}[] = [];
+
+		let smallestOriginalWidth = Number.POSITIVE_INFINITY;
+
+		for (const object of textAreaObjects) {
+			const mountedTextArea = this.stack.domBridge.getHandle(object.id);
+
+			if (!mountedTextArea || !(mountedTextArea instanceof MountedTextArea)) {
+				throw new Error('Text area to measure is not mounted');
+			}
+
+			const textAreaWidth =
+				object.fixedWidth ?? mountedTextArea.getRenderedSizeInCanvasSpace().width;
+
+			smallestOriginalWidth = Math.min(smallestOriginalWidth, textAreaWidth);
+
+			originalLayouts.set(object.id, extractLayout(object));
+			affectedObjectPairs.push({ liveObject: object, mountedObject: mountedTextArea });
+		}
+
+		const applyLayouts = (layouts: Map<ID, TextBoxLayout>) => {
+			for (const object of this.ui.objects) {
+				const newLayout = layouts.get(object.id);
+
+				if (newLayout) {
+					Object.assign(object, newLayout);
+				}
+			}
+		};
+
+		let totalMovement = 0;
+		let effectiveTotalMovement = 0;
+
+		return this.startGesture<TextAreaResizeGestureHandle>({
+			createHandle: (gesture) => ({
+				resizeBy: (delta) => {
+					if (gesture.isComplete()) return;
+
+					const newTotalMovement = totalMovement + delta;
+					let newEffectiveTotalMovement: number;
+
+					if (side === 'right') {
+						newEffectiveTotalMovement = Math.max(newTotalMovement, -smallestOriginalWidth);
+					} else {
+						newEffectiveTotalMovement = Math.min(newTotalMovement, smallestOriginalWidth);
+					}
+
+					const clampedDelta = newEffectiveTotalMovement - effectiveTotalMovement;
+					for (const { liveObject, mountedObject } of affectedObjectPairs) {
+						const newLayout = mountedObject.computeWidthResizeChange(side, clampedDelta);
+						Object.assign(liveObject, newLayout);
+					}
+
+					totalMovement = newTotalMovement;
+					effectiveTotalMovement = newEffectiveTotalMovement;
+				}
+			}),
+
+			onComplete: () => {
+				if (effectiveTotalMovement === 0) {
+					// No resizing happened, therefore no history entry is needed.
+					return;
+				}
+
+				for (const object of textAreaObjects) {
+					newLayouts.set(object.id, extractLayout(object));
+				}
+
+				this.history.execute('Resize text area', ({ isRedo }) => {
+					if (isRedo) {
+						applyLayouts(newLayouts);
+					}
+
+					return () => {
+						applyLayouts(originalLayouts);
+					};
+				});
+			},
+
+			onCancel: () => {
+				applyLayouts(originalLayouts);
 			}
 		});
 	}

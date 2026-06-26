@@ -15,7 +15,7 @@
 	let { controller, alignment, visible, children }: Props = $props();
 </script>
 
-<Tether {children} origin="top-left" direction="bottom-left">
+<Tether {children} origin="top-left" direction="bottom-left" measureAnchor={visible}>
 	{#snippet portal()}
 		<TextAreaToolbar {visible} {controller} {alignment} />
 	{/snippet}

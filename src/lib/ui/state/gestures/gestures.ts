@@ -8,6 +8,10 @@ export interface AreaSelectGestureHandle {
 	updatePointerPosition(clientSpace: Vector): void;
 }
 
+export interface TextAreaResizeGestureHandle {
+	resizeBy(offset: number): void;
+}
+
 export type GestureState = AreaSelectGestureState;
 
 export abstract class AreaSelectGestureState {

@@ -1,7 +1,9 @@
 import {
 	AxisAlignedBoundingBox,
 	type BoundingBox,
+	type DynamicWidthTextAlignment,
 	type FixedWidthTextAlignment,
+	type HorizontalDirection,
 	type Size,
 	type Vector,
 	type VerticalAlignment
@@ -135,7 +137,46 @@ export class MountedTextArea extends MountedObject {
 		};
 	}
 
-	private getRenderedSizeInCanvasSpace(): Size {
+	computeWidthResizeChange(
+		draggedSide: HorizontalDirection,
+		draggedSideDelta: number
+	): TextBoxLayout {
+		const { alignH, alignV, anchor, fixedWidth } = this.bridge.layout;
+		const currentWidth = fixedWidth ?? this.getRenderedSizeInCanvasSpace().width;
+
+		const anchorXDelta = MountedTextArea.computeAnchorXDeltaAfterResize(
+			alignH,
+			draggedSide,
+			draggedSideDelta
+		);
+
+		return {
+			alignH,
+			alignV,
+			anchor: { x: anchor.x + anchorXDelta, y: anchor.y },
+			fixedWidth: currentWidth + (draggedSide === 'right' ? draggedSideDelta : -draggedSideDelta)
+		};
+	}
+
+	private static computeAnchorXDeltaAfterResize(
+		alignment: DynamicWidthTextAlignment | FixedWidthTextAlignment,
+		draggedSide: HorizontalDirection,
+		draggedSideDelta: number
+	): number {
+		switch (alignment) {
+			case 'start':
+			case 'justify':
+				return draggedSide === 'right' ? 0 : draggedSideDelta;
+
+			case 'center':
+				return draggedSideDelta / 2;
+
+			case 'end':
+				return draggedSide === 'right' ? draggedSideDelta : 0;
+		}
+	}
+
+	getRenderedSizeInCanvasSpace(): Size {
 		const renderedScale = this.bridge.uiScale;
 		const clientRect = this.getAxisAlignedBoundingClientRect();
 
