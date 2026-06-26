@@ -19,7 +19,7 @@
 
 <script lang="ts">
 	import type { FixedWidthTextAlignment, VerticalAlignment } from '$lib/data/common';
-	import type { TextBoxAlignment } from '$lib/data/vault';
+	import type { TextBoxAlignment } from '$lib/data/text-box-layout';
 	import { IconButton } from '$lib/packages/kit';
 	import type { TextAreaObjectController } from '../TextAreaObject.svelte';
 

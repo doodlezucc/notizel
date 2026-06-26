@@ -6,8 +6,8 @@
 </script>
 
 <script lang="ts">
-	import type { FixedWidthTextAlignment, Size, Vector, VerticalAlignment } from '$lib/data/common';
-	import type { TextBoxAlignment } from '$lib/data/vault';
+	import type { FixedWidthTextAlignment, Size, VerticalAlignment } from '$lib/data/common';
+	import type { TextBoxLayout } from '$lib/data/text-box-layout';
 	import type { Editor as TiptapEditor } from '@tiptap/core';
 	import ObjectAnchor, {
 		getHorizontalCenterOffsetFraction,
@@ -16,13 +16,9 @@
 	import TiptapArea from './TiptapArea.svelte';
 	import TextAreaToolbarWrapper from './toolbar/TextAreaToolbarWrapper.svelte';
 
-	type TextAreaLayout = TextBoxAlignment & {
-		anchor: Vector;
-	};
-
 	interface Props {
 		editor: TiptapEditor;
-		layout: TextAreaLayout;
+		layout: TextBoxLayout;
 		isSelected: boolean;
 		isEditing: boolean;
 		computeSize?: (clientRect: DOMRect) => Size;

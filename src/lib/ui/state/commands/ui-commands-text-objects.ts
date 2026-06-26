@@ -1,5 +1,5 @@
 import type { ID } from '$lib/data/common';
-import type { TextBoxLayout } from '$lib/data/vault';
+import { extractLayout, type TextBoxLayout } from '$lib/data/text-box-layout';
 import type { OmitFromUnion } from '$lib/util/types';
 import type { LiveTextCanvasObject } from '../live-objects';
 import { StackUser } from '../stack/stack-user';
@@ -48,8 +48,7 @@ export class UICommandsTextObjects extends StackUser {
 			throw new Error('Object is not a text area');
 		}
 
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { id, type, editor, ...previousLayout } = textObject;
+		const previousLayout = extractLayout(textObject);
 
 		this.history.execute('Change textbox layout', () => {
 			Object.assign(textObject, layout);

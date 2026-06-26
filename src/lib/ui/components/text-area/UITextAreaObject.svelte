@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { AxisAlignedBoundingBox, type Vector } from '$lib/data/common';
+	import { extractLayout } from '$lib/data/text-box-layout';
 	import type { LiveTextCanvasObject } from '$lib/ui/state/live-objects';
 	import type { MountedObject } from '$lib/ui/state/ui-dom-bridge';
 	import { UITextAreaEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
@@ -69,9 +70,6 @@
 
 <UICanvasDraggableObject objectId={object.id} ignoreDragging={isEditing} {mountedObject}>
 	{#snippet content({ isInAreaSelection, draggableEvents })}
-		<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
-		{@const { editor, id, type, ...layout } = object}
-
 		<TextAreaObject
 			bind:this={textArea}
 			editor={object.editor}
@@ -82,7 +80,8 @@
 				height: rect.height / ui.camera.scale
 			})}
 			bind:layout={
-				() => layout, (newLayout) => ui.commands.textObjects.setTextLayout(object.id, newLayout)
+				() => extractLayout(object),
+				(newLayout) => ui.commands.textObjects.setTextLayout(object.id, newLayout)
 			}
 			{@attach draggableEvents}
 			{@attach createAttachment()}

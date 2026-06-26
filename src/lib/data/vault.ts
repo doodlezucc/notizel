@@ -1,13 +1,7 @@
 import type { Content as TiptapContent } from '@tiptap/core';
 import type { Temporal } from 'temporal-polyfill';
-import type {
-	CameraTransform,
-	DynamicWidthTextAlignment,
-	FixedWidthTextAlignment,
-	ID,
-	Vector,
-	VerticalAlignment
-} from './common';
+import type { CameraTransform, ID } from './common';
+import type { TextBoxLayout } from './text-box-layout';
 
 export interface Vault {
 	files: VaultFileMeta[];
@@ -33,15 +27,3 @@ export type TextCanvasObject = {
 
 	content: TiptapContent;
 } & TextBoxLayout;
-
-export type TextBoxLayout = {
-	anchor: Vector;
-} & TextBoxAlignment;
-
-export type TextBoxAlignment = {
-	/** This only decides in what vertical direction to scale the box when adding new lines of text. */
-	alignV: VerticalAlignment;
-} & (
-	| { fixedWidth?: never; alignH: DynamicWidthTextAlignment }
-	| { fixedWidth: number; alignH: FixedWidthTextAlignment }
-);

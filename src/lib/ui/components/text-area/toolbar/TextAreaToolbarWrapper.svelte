@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TextBoxAlignment } from '$lib/data/vault';
+	import type { TextBoxAlignment } from '$lib/data/text-box-layout';
 	import type { Snippet } from 'svelte';
 	import { Tether } from 'svelte-tether';
 	import type { TextAreaObjectController } from '../TextAreaObject.svelte';
