@@ -10,6 +10,7 @@
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import { untrack } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
+	import { CanvasInputSet } from '../canvas/EditorCanvasInputScope.svelte';
 	import UICanvasDraggableObject from '../canvas/UICanvasDraggableObject.svelte';
 	import type { ResizeContext } from './resizer/ResizeHandleWrapper.svelte';
 	import TextAreaObject, { type TextAreaObjectController } from './TextAreaObject.svelte';
@@ -67,16 +68,26 @@
 		}
 	});
 
-	let gesture: ControlledGestureHandle<TextAreaResizeGestureHandle> | undefined;
+	let gesture = $state<ControlledGestureHandle<TextAreaResizeGestureHandle>>();
 
 	function onResizeStart(context: ResizeContext) {
 		context.event.preventDefault();
 		gesture = ui.commands.gestures.startResizingSelectedTextAreas(context.side);
 	}
 
+	const modifierResizeSymmetrical = CanvasInputSet.state.conditional(() => gesture !== undefined)
+		.actions.modifierResizeSymmetrical;
+
+	$effect(() => {
+		const enableSymmetry = modifierResizeSymmetrical.isPressed;
+
+		untrack(() => gesture?.resizeBy(0, enableSymmetry));
+	});
+
 	function onPointerMove(ev: PointerEvent) {
 		if (gesture) {
-			gesture.resizeBy(ev.movementX / ui.camera.scale);
+			ev.preventDefault();
+			gesture.resizeBy(ev.movementX / ui.camera.scale, modifierResizeSymmetrical.isPressed);
 		}
 	}
 

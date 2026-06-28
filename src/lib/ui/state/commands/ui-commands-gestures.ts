@@ -186,9 +186,11 @@ export class UICommandsGestures extends StackUser {
 
 		const originalLayouts = new Map<ID, TextBoxLayout>();
 		const newLayouts = new Map<ID, TextBoxLayout>();
-		const affectedObjectPairs: {
-			liveObject: LiveTextCanvasObject;
-			mountedObject: MountedTextArea;
+		const affectedTextAreas: {
+			originalAnchorX: number;
+			originalWidth: number;
+			live: LiveTextCanvasObject;
+			mounted: MountedTextArea;
 		}[] = [];
 
 		let smallestOriginalWidth = Number.POSITIVE_INFINITY;
@@ -206,7 +208,12 @@ export class UICommandsGestures extends StackUser {
 			smallestOriginalWidth = Math.min(smallestOriginalWidth, textAreaWidth);
 
 			originalLayouts.set(object.id, extractLayout(object));
-			affectedObjectPairs.push({ liveObject: object, mountedObject: mountedTextArea });
+			affectedTextAreas.push({
+				originalAnchorX: object.anchor.x,
+				originalWidth: textAreaWidth,
+				live: object,
+				mounted: mountedTextArea
+			});
 		}
 
 		const applyLayouts = (layouts: Map<ID, TextBoxLayout>) => {
@@ -219,36 +226,42 @@ export class UICommandsGestures extends StackUser {
 			}
 		};
 
+		let hasMovedAtAll = false;
 		let totalMovement = 0;
-		let effectiveTotalMovement = 0;
 
 		return this.startGesture<TextAreaResizeGestureHandle>({
 			createHandle: (gesture) => ({
-				resizeBy: (delta) => {
+				resizeBy: (delta, symmetric) => {
 					if (gesture.isComplete()) return;
 
-					const newTotalMovement = totalMovement + delta;
-					let newEffectiveTotalMovement: number;
+					hasMovedAtAll = true;
+					totalMovement += delta;
+
+					const totalDelta = symmetric ? totalMovement * 2 : totalMovement;
+					let widthDelta: number;
 
 					if (side === 'right') {
-						newEffectiveTotalMovement = Math.max(newTotalMovement, -smallestOriginalWidth);
+						widthDelta = Math.max(totalDelta, -smallestOriginalWidth);
 					} else {
-						newEffectiveTotalMovement = Math.min(newTotalMovement, smallestOriginalWidth);
+						widthDelta = Math.max(-totalDelta, -smallestOriginalWidth);
 					}
 
-					const clampedDelta = newEffectiveTotalMovement - effectiveTotalMovement;
-					for (const { liveObject, mountedObject } of affectedObjectPairs) {
-						const newLayout = mountedObject.computeWidthResizeChange(side, clampedDelta);
-						Object.assign(liveObject, newLayout);
-					}
+					const fixedCenterOffset = symmetric ? 0 : side === 'right' ? 0.5 : -0.5;
 
-					totalMovement = newTotalMovement;
-					effectiveTotalMovement = newEffectiveTotalMovement;
+					for (const textArea of affectedTextAreas) {
+						const newLayout = textArea.mounted.computeWidthResizeChange({
+							fixedCenterOffset,
+							originalAnchorX: textArea.originalAnchorX,
+							originalWidth: textArea.originalWidth,
+							newWidth: textArea.originalWidth + widthDelta
+						});
+						Object.assign(textArea.live, newLayout);
+					}
 				}
 			}),
 
 			onComplete: () => {
-				if (effectiveTotalMovement === 0) {
+				if (!hasMovedAtAll) {
 					// No resizing happened, therefore no history entry is needed.
 					return;
 				}

@@ -9,7 +9,7 @@ export interface AreaSelectGestureHandle {
 }
 
 export interface TextAreaResizeGestureHandle {
-	resizeBy(offset: number): void;
+	resizeBy(offset: number, symmetric: boolean): void;
 }
 
 export type GestureState = AreaSelectGestureState;

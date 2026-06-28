@@ -22,7 +22,8 @@
 			copy: [{ logicalKey: 'C', modifiers: { ctrl: true } }, { logicalKey: 'Copy' }],
 			cut: [{ logicalKey: 'X', modifiers: { ctrl: true } }, { logicalKey: 'Cut' }],
 
-			modifierDuplicate: [{ logicalKey: 'Alt' }]
+			modifierDuplicate: [{ logicalKey: 'Alt' }],
+			modifierResizeSymmetrical: [{ logicalKey: 'Alt' }]
 		}
 	});
 </script>

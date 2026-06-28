@@ -1,9 +1,7 @@
 import {
 	AxisAlignedBoundingBox,
 	type BoundingBox,
-	type DynamicWidthTextAlignment,
 	type FixedWidthTextAlignment,
-	type HorizontalDirection,
 	type Size,
 	type Vector,
 	type VerticalAlignment
@@ -105,7 +103,7 @@ export class MountedTextArea extends MountedObject {
 				}
 			}
 
-			const renderedWidth = this.getRenderedSizeInCanvasSpace().width;
+			const renderedWidth = fixedWidth ?? this.getRenderedSizeInCanvasSpace().width;
 
 			return {
 				anchor: {
@@ -137,43 +135,24 @@ export class MountedTextArea extends MountedObject {
 		};
 	}
 
-	computeWidthResizeChange(
-		draggedSide: HorizontalDirection,
-		draggedSideDelta: number
-	): TextBoxLayout {
-		const { alignH, alignV, anchor, fixedWidth } = this.bridge.layout;
-		const currentWidth = fixedWidth ?? this.getRenderedSizeInCanvasSpace().width;
-
-		const anchorXDelta = MountedTextArea.computeAnchorXDeltaAfterResize(
-			alignH,
-			draggedSide,
-			draggedSideDelta
-		);
+	computeWidthResizeChange({
+		fixedCenterOffset,
+		originalAnchorX,
+		originalWidth,
+		newWidth
+	}: ComputeWidthResizeChangeOptions): TextBoxLayout {
+		const { alignH, alignV, anchor } = this.bridge.layout;
+		const anchorOffset = getHorizontalCenterOffsetFraction(alignH);
 
 		return {
 			alignH,
 			alignV,
-			anchor: { x: anchor.x + anchorXDelta, y: anchor.y },
-			fixedWidth: currentWidth + (draggedSide === 'right' ? draggedSideDelta : -draggedSideDelta)
+			anchor: {
+				x: originalAnchorX + (fixedCenterOffset - anchorOffset) * (newWidth - originalWidth),
+				y: anchor.y
+			},
+			fixedWidth: newWidth
 		};
-	}
-
-	private static computeAnchorXDeltaAfterResize(
-		alignment: DynamicWidthTextAlignment | FixedWidthTextAlignment,
-		draggedSide: HorizontalDirection,
-		draggedSideDelta: number
-	): number {
-		switch (alignment) {
-			case 'start':
-			case 'justify':
-				return draggedSide === 'right' ? 0 : draggedSideDelta;
-
-			case 'center':
-				return draggedSideDelta / 2;
-
-			case 'end':
-				return draggedSide === 'right' ? draggedSideDelta : 0;
-		}
 	}
 
 	getRenderedSizeInCanvasSpace(): Size {
@@ -189,4 +168,12 @@ export class MountedTextArea extends MountedObject {
 	private getAxisAlignedBoundingClientRect() {
 		return this.bridge.container.getBoundingClientRect();
 	}
+}
+
+interface ComputeWidthResizeChangeOptions {
+	/** A value between `-0.5` (right-aligned text box) and `0.5` (left-aligned text box). */
+	fixedCenterOffset: number;
+	originalAnchorX: number;
+	originalWidth: number;
+	newWidth: number;
 }
