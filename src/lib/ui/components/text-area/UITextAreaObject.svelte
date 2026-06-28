@@ -76,6 +76,9 @@
 	const modifierResizeSymmetrical = CanvasInputSet.state.conditional(() => gesture !== undefined)
 		.actions.modifierResizeSymmetrical;
 
+	// Prevent default event handling while the resize gesture is active
+	modifierResizeSymmetrical.handleDown(() => {});
+
 	$effect(() => {
 		const enableSymmetry = modifierResizeSymmetrical.isPressed;
 
