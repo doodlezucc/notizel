@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { extractLayout } from '$lib/data/text-box-layout';
 	import { MountedTextArea } from '$lib/ui/state/dom-bridge/text-area';
-	import type {
-		ControlledGestureHandle,
-		TextAreaResizeGestureHandle
-	} from '$lib/ui/state/gestures/gestures';
+	import type { GestureHandle } from '$lib/ui/state/gestures/gestures';
+	import type { ResizeTextAreasGesture } from '$lib/ui/state/gestures/resize-text-areas.svelte';
 	import type { LiveTextCanvasObject } from '$lib/ui/state/live-objects';
 	import { UITextAreaEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
@@ -68,7 +66,7 @@
 		}
 	});
 
-	let gesture = $state<ControlledGestureHandle<TextAreaResizeGestureHandle>>();
+	let gesture = $state<GestureHandle<ResizeTextAreasGesture>>();
 
 	function onResizeStart(context: ResizeContext) {
 		context.event.preventDefault();
@@ -81,13 +79,13 @@
 	$effect(() => {
 		const enableSymmetry = modifierResizeSymmetrical.isPressed;
 
-		untrack(() => gesture?.resizeBy(0, enableSymmetry));
+		untrack(() => gesture?.state.resizeBy(0, enableSymmetry));
 	});
 
 	function onPointerMove(ev: PointerEvent) {
 		if (gesture) {
 			ev.preventDefault();
-			gesture.resizeBy(ev.movementX / ui.camera.scale, modifierResizeSymmetrical.isPressed);
+			gesture.state.resizeBy(ev.movementX / ui.camera.scale, modifierResizeSymmetrical.isPressed);
 		}
 	}
 

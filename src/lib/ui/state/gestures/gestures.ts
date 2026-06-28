@@ -1,59 +1,33 @@
-import type { AxisAlignedBoundingBox, ID, Vector } from '$lib/data/common';
+import { StackUser } from '../stack/stack-user';
 
-export interface ObjectTransformGestureHandle {
-	moveObjectsBy(offset: Vector): void;
-}
+export interface GestureHandle<T extends Gesture = Gesture> {
+	readonly state: Omit<T, 'complete' | 'cancel'>;
 
-export interface AreaSelectGestureHandle {
-	updatePointerPosition(clientSpace: Vector): void;
-}
-
-export interface TextAreaResizeGestureHandle {
-	resizeBy(offset: number, symmetric: boolean): void;
-}
-
-export type GestureState = AreaSelectGestureState;
-
-export abstract class AreaSelectGestureState {
-	abstract readonly area: AxisAlignedBoundingBox;
-	abstract readonly idsInArea: ReadonlySet<ID>;
-}
-
-export interface CreateHandleContext {
-	isComplete(): boolean;
-}
-
-export interface CreateGestureOptions<T> {
-	createHandle: (context: CreateHandleContext) => T;
-	onComplete?: () => void;
-	onCancel?: () => void;
-}
-
-export type ControlledGestureHandle<T = unknown> = T & {
 	complete(): void;
 	cancel(): void;
-};
+}
 
-export function createGesture<T>(options: CreateGestureOptions<T>): ControlledGestureHandle<T> {
-	let isComplete = false;
+export abstract class Gesture extends StackUser {
+	#isOver = false;
 
-	return {
-		...options.createHandle({
-			isComplete: () => isComplete
-		}),
+	get isOver() {
+		return this.#isOver;
+	}
 
-		complete: () => {
-			if (isComplete) return;
-			isComplete = true;
-
-			options.onComplete?.();
-		},
-
-		cancel: () => {
-			if (isComplete) return;
-			isComplete = true;
-
-			options.onCancel?.();
+	complete() {
+		if (!this.#isOver) {
+			this.#isOver = true;
+			this.onComplete();
 		}
-	};
+	}
+
+	cancel() {
+		if (!this.#isOver) {
+			this.#isOver = true;
+			this.onCancel();
+		}
+	}
+
+	protected abstract onComplete(): void;
+	protected abstract onCancel(): void;
 }

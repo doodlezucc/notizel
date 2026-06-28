@@ -8,7 +8,7 @@ import {
 } from '$lib/data/common';
 import type { TextBoxAlignment } from '$lib/data/text-box-layout';
 import type { CanvasFileData, Vault, VaultFileMeta } from '$lib/data/vault';
-import type { GestureState } from './gestures/gestures';
+import type { GestureHandle } from './gestures/gestures';
 import { freezeCanvasObject, type LiveCanvasObject } from './live-objects';
 import { UICommands } from './ui-commands';
 import type { UIDOMBridge } from './ui-dom-bridge';
@@ -22,7 +22,7 @@ interface DefaultTextAreaAlignment {
 export interface MutableUIState {
 	camera: CameraTransform;
 
-	readonly activeGesture: GestureState | null;
+	readonly activeGesture: GestureHandle | null;
 	readonly defaultAlignmentForNewTextArea: DefaultTextAreaAlignment;
 }
 
@@ -46,7 +46,7 @@ export class UIState {
 		position: { x: 0, y: 0 },
 		scale: 1
 	});
-	activeGesture = $state<GestureState | null>(null);
+	activeGesture = $state<GestureHandle | null>(null);
 
 	vault = $state<Vault>({ files: [] });
 	fileMeta = $state<VaultFileMeta | null>(null);

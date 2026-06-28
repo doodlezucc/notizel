@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { Vectors, type ID, type Vector } from '$lib/data/common';
 	import type { MountedObject } from '$lib/ui/state/dom-bridge/object';
-	import {
-		AreaSelectGestureState,
-		type ControlledGestureHandle,
-		type ObjectTransformGestureHandle
-	} from '$lib/ui/state/gestures/gestures';
+	import { AreaSelectGesture } from '$lib/ui/state/gestures/area-select.svelte';
+	import { type GestureHandle } from '$lib/ui/state/gestures/gestures';
+	import type { MoveObjectsAsDuplicatesGesture } from '$lib/ui/state/gestures/move-objects-as-duplicates.svelte';
+	import type { MoveObjectsGesture } from '$lib/ui/state/gestures/move-objects.svelte';
 	import { UIGeneralEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import { onMount, type Snippet } from 'svelte';
@@ -33,7 +32,7 @@
 	interface DraggingContext {
 		isStartOfSelection: boolean;
 		isDuplicationGesture: boolean;
-		gesture: ControlledGestureHandle<ObjectTransformGestureHandle>;
+		gesture: GestureHandle<MoveObjectsGesture | MoveObjectsAsDuplicatesGesture>;
 		previousPointer: Vector;
 		hasMovedAtAll: boolean;
 	}
@@ -76,7 +75,7 @@
 		const pointerDelta = Vectors.subtract(pointer, activeDragging.previousPointer);
 		const offset = Vectors.scale(pointerDelta, 1 / ui.camera.scale);
 
-		activeDragging.gesture.moveObjectsBy(offset);
+		activeDragging.gesture.state.moveObjectsBy(offset);
 
 		activeDragging.previousPointer = pointer;
 		activeDragging.hasMovedAtAll = true;
@@ -128,8 +127,8 @@
 
 {@render content({
 	isInAreaSelection:
-		ui.activeGesture instanceof AreaSelectGestureState
-			? ui.activeGesture.idsInArea.has(objectId)
+		ui.activeGesture?.state instanceof AreaSelectGesture
+			? ui.activeGesture.state.idsInArea.has(objectId)
 			: false,
 	draggableEvents: createDraggableAttachment()
 })}

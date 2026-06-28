@@ -1,25 +1,14 @@
 <script lang="ts">
 	import { type Vector } from '$lib/data/common';
-	import {
-		AreaSelectGestureState,
-		type AreaSelectGestureHandle,
-		type ControlledGestureHandle
-	} from '$lib/ui/state/gestures/gestures';
+	import { AreaSelectGesture } from '$lib/ui/state/gestures/area-select.svelte';
+	import { type GestureHandle } from '$lib/ui/state/gestures/gestures';
 	import { UIGeneralEditingScope } from '$lib/ui/state/ui-editing-scope.svelte';
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 
 	const ui = useUI();
 
-	let activeGesture: ControlledGestureHandle<AreaSelectGestureHandle> | null = null;
+	let activeGesture = $state<GestureHandle<AreaSelectGesture> | null>(null);
 	let scheduledUpdate: number | null = null;
-
-	let activeGestureState = $derived.by(() => {
-		if (ui.activeGesture instanceof AreaSelectGestureState) {
-			return ui.activeGesture;
-		} else {
-			return null;
-		}
-	});
 
 	let currentPointerPosition = $state() as Vector;
 
@@ -40,7 +29,7 @@
 
 		if (scheduledUpdate === null) {
 			scheduledUpdate = requestAnimationFrame(() => {
-				activeGesture?.updatePointerPosition(currentPointerPosition);
+				activeGesture?.state.updatePointerPosition(currentPointerPosition);
 				scheduledUpdate = null;
 			});
 		}
@@ -56,8 +45,8 @@
 
 <svelte:window onpointermove={(ev) => onPointerMove(ev)} onpointerup={() => onPointerUp()} />
 
-{#if activeGestureState}
-	{@const boundingBox = activeGestureState.area}
+{#if activeGesture}
+	{@const boundingBox = activeGesture.state.area}
 
 	{#if boundingBox.size.width > 0 || boundingBox.size.height > 0}
 		<div
