@@ -15,5 +15,16 @@ export const Vectors = {
 	},
 	negate: ({ x, y }: Vector): Vector => {
 		return { x: -x, y: -y };
+	},
+	distance: (a: Vector, b: Vector): number => {
+		const x = b.x - a.x;
+		const y = b.y - a.y;
+		return Math.sqrt(x * x + y * y);
+	},
+	interpolate: (a: Vector, b: Vector, t: number): Vector => {
+		return {
+			x: a.x + t * (b.x - a.x),
+			y: a.y + t * (b.y - a.y)
+		};
 	}
 };
