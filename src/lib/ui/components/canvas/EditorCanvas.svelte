@@ -2,6 +2,7 @@
 	import { useUI } from '$lib/ui/state/UIContextWrapper.svelte';
 	import UITextAreaObject from '../text-area/UITextAreaObject.svelte';
 	import AreaSelection from './AreaSelection.svelte';
+	import DoodlingCanvas from './doodling/DoodlingCanvas.svelte';
 	import EditorCanvasBackground from './EditorCanvasBackground.svelte';
 	import EditorCanvasInputScope from './EditorCanvasInputScope.svelte';
 	import InfiniteCanvas from './InfiniteCanvas.svelte';
@@ -12,21 +13,7 @@
 </script>
 
 <EditorCanvasInputScope>
-	<InfiniteCanvas
-		bind:transform={ui.camera}
-		onBackgroundPrimaryPointerDownRaw={(ev) => areaSelection?.start(ev)}
-		onBackgroundTap={() => {
-			ui.commands.gestures.cancelActive();
-			ui.commands.exitCurrentScope();
-		}}
-		onBackgroundDoubleTap={(ev) => {
-			ui.commands.textObjects.create({
-				alignH: ui.defaultAlignmentForNewTextArea.alignH,
-				alignV: ui.defaultAlignmentForNewTextArea.alignV,
-				anchor: ev.pointerInCanvasSpace
-			});
-		}}
-	>
+	<InfiniteCanvas bind:transform={ui.camera}>
 		{#snippet background()}
 			<EditorCanvasBackground transform={ui.camera} />
 		{/snippet}
@@ -37,4 +24,6 @@
 	</InfiniteCanvas>
 
 	<AreaSelection bind:this={areaSelection} />
+
+	<DoodlingCanvas />
 </EditorCanvasInputScope>
