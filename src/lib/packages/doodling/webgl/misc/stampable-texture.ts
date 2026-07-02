@@ -1,31 +1,28 @@
 import type { Size } from '$lib/data/common';
+import { GLResource, type GL, type UnbindFunction } from '../resource';
 
-export class WebGLStampableTexture {
-	private readonly gl: WebGL2RenderingContext;
-
+export class GLStampableTexture extends GLResource {
 	readonly texture: WebGLTexture;
 	private readonly framebuffer: WebGLFramebuffer;
 
-	constructor(gl: WebGL2RenderingContext, size: Size) {
-		this.gl = gl;
-		this.texture = WebGLStampableTexture.createTexture(gl, size);
-		this.framebuffer = WebGLStampableTexture.createFramebuffer(gl, this.texture);
+	constructor(gl: GL, size: Size) {
+		super(gl);
+		this.texture = GLStampableTexture.createTexture(gl, size);
+		this.framebuffer = GLStampableTexture.createFramebuffer(gl, this.texture);
 	}
 
-	dispose() {
+	override destroy() {
 		this.gl.deleteFramebuffer(this.framebuffer);
 		this.gl.deleteTexture(this.texture);
 	}
 
-	paint(body: () => void) {
+	bindFramebuffer(): UnbindFunction {
 		const gl = this.gl;
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
 
-		body();
-
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		return () => gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
 
 	private static createTexture(gl: WebGL2RenderingContext, size: Size) {

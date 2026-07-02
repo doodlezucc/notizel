@@ -1,4 +1,4 @@
-import { describeWebGLProgram } from '../../util/webgl-program';
+import { describeWebGLProgram } from '../../webgl/program/program';
 
 const VERTEX_SHADER_SRC = `#version 300 es
   layout(location = 0) in vec2 a_position;
