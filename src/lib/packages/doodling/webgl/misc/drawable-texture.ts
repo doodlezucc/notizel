@@ -1,5 +1,5 @@
 import type { Size } from '$lib/data/common';
-import { GLResource, type GL, type UnbindFunction } from '../resource';
+import { glBindResources, GLResource, type GL, type UnbindFunction } from '../resource';
 
 export class GLDrawableTexture extends GLResource {
 	readonly texture: WebGLTexture;
@@ -23,6 +23,13 @@ export class GLDrawableTexture extends GLResource {
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
 
 		return () => gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	}
+
+	clear() {
+		glBindResources([this.bindFramebuffer()], () => {
+			this.gl.clearColor(0, 0, 0, 0);
+			this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+		});
 	}
 
 	private static createTexture(gl: WebGL2RenderingContext, size: Size) {
@@ -59,7 +66,6 @@ export class GLDrawableTexture extends GLResource {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-		gl.viewport(0, 0, 200, 200);
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { type CameraTransform } from '$lib/data/common';
 	import { RasterDoodlingEngine, Stroke } from '$lib/packages/doodling';
-	import { onDestroy, onMount, untrack } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 
 	interface Props {
 		transform: CameraTransform;
@@ -18,7 +18,7 @@
 	$effect(() => {
 		if (!engine && canvas && width && height) {
 			const gl = canvas.getContext('webgl2')!;
-			engine = new RasterDoodlingEngine(gl, { width, height });
+			engine = new RasterDoodlingEngine(gl, transform, { width, height });
 		}
 	});
 
@@ -32,26 +32,6 @@
 
 	onDestroy(() => {
 		engine?.dispose();
-	});
-
-	let needsRepaint = false;
-	let scheduledAnimationFrame!: number;
-
-	function tick() {
-		scheduledAnimationFrame = requestAnimationFrame(tick);
-
-		if (needsRepaint) {
-			needsRepaint = false;
-			engine?.render(transform, { width, height });
-		}
-	}
-
-	onMount(() => {
-		scheduledAnimationFrame = requestAnimationFrame(tick);
-
-		onDestroy(() => {
-			cancelAnimationFrame(scheduledAnimationFrame);
-		});
 	});
 
 	interface BrushGesture {
@@ -76,7 +56,6 @@
 		);
 
 		gesture = { stroke: stroke };
-		needsRepaint = true;
 	}
 
 	function onPointerMove(ev: PointerEvent) {
@@ -86,8 +65,6 @@
 			pointer: { x: ev.pageX, y: ev.pageY },
 			pressure: ev.pressure
 		});
-
-		needsRepaint = true;
 	}
 
 	function onPointerUp() {

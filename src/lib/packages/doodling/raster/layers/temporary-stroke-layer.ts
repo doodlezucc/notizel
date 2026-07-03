@@ -3,6 +3,7 @@ import type { GLGeometryShaderBinding } from '../../webgl/geometry/geometry-shad
 import type { GLQuad } from '../../webgl/geometry/quad';
 import { GLDrawableTexture } from '../../webgl/misc/drawable-texture';
 import { GLProgram, type GLProgramOf } from '../../webgl/program/program';
+import type { RedrawMarker } from '../../webgl/redraw-marker';
 import { glBindResources, type GL, type UnbindFunction } from '../../webgl/resource';
 import type { Brush } from '../brush';
 import { Layer } from '../layer';
@@ -11,14 +12,18 @@ import { Stroke, type StrokeEvent } from '../stroke';
 import { LinearStrokeSegment, type StrokePoint } from '../stroke-segment';
 
 export class TemporaryStrokeLayer extends Layer {
+	private readonly marker: RedrawMarker;
 	private readonly drawableTexture: GLDrawableTexture;
 
 	private readonly unlitTextureProgram: GLProgramOf<typeof shaderUnlitTexture>;
 	private readonly clipSpaceQuadUnlitVAO: GLGeometryShaderBinding;
 
-	constructor(gl: GL, size: Size, clipSpaceQuad: GLQuad) {
+	private readonly currentStrokes = new Set<Stroke>();
+
+	constructor(gl: GL, redrawMarker: RedrawMarker, size: Size, clipSpaceQuad: GLQuad) {
 		super(gl);
 
+		this.marker = redrawMarker;
 		this.unlitTextureProgram = GLProgram.create(gl, shaderUnlitTexture);
 		this.drawableTexture = new GLDrawableTexture(gl, size);
 		this.clipSpaceQuadUnlitVAO = clipSpaceQuad.createShaderBinding({
@@ -34,6 +39,11 @@ export class TemporaryStrokeLayer extends Layer {
 	}
 
 	override render(camera: CameraTransform, viewport: Size) {
+		if (this.currentStrokes.size === 0) {
+			// No stroke is currently being drawn, skip this layer.
+			return;
+		}
+
 		const gl = this.gl;
 
 		gl.activeTexture(gl.TEXTURE0);
@@ -48,7 +58,8 @@ export class TemporaryStrokeLayer extends Layer {
 			],
 			() => {
 				gl.disable(gl.DEPTH_TEST);
-				gl.disable(gl.BLEND);
+				gl.enable(gl.BLEND);
+				gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 				gl.drawArrays(gl.TRIANGLES, 0, 6);
 			}
 		);
@@ -61,20 +72,47 @@ export class TemporaryStrokeLayer extends Layer {
 	}
 
 	createStroke(brush: Brush, radiusSetting: number): Stroke {
-		return new StrokeImpl(this, brush, radiusSetting);
+		const newStroke = new StrokeImpl(this, this.marker, brush, radiusSetting, () =>
+			this.onStrokeCompleted(newStroke)
+		);
+		this.currentStrokes.add(newStroke);
+		return newStroke;
+	}
+
+	private onStrokeCompleted(stroke: Stroke) {
+		this.currentStrokes.delete(stroke);
+
+		if (this.currentStrokes.size === 0) {
+			this.writeToCanvas();
+		}
+	}
+
+	private writeToCanvas() {
+		this.marker.markNeedsRedraw();
+		this.drawableTexture.clear();
 	}
 }
 
 class StrokeImpl extends Stroke {
 	private readonly layer: TemporaryStrokeLayer;
+	private readonly marker: RedrawMarker;
 	private readonly brush: Brush;
 	private readonly radius: number;
+	private readonly onComplete: () => void;
 
-	constructor(layer: TemporaryStrokeLayer, brush: Brush, radius: number) {
+	constructor(
+		layer: TemporaryStrokeLayer,
+		marker: RedrawMarker,
+		brush: Brush,
+		radius: number,
+		onComplete: () => void
+	) {
 		super();
 		this.layer = layer;
+		this.marker = marker;
 		this.brush = brush;
 		this.radius = radius;
+		this.onComplete = onComplete;
 	}
 
 	private transformEventToPoint(event: StrokeEvent): StrokePoint {
@@ -90,6 +128,8 @@ class StrokeImpl extends Stroke {
 		glBindResources([this.layer.bindFramebuffer()], () => {
 			this.brush.drawInitialPoint(point);
 		});
+
+		this.marker.markNeedsRedraw();
 	}
 
 	protected drawSegment(from: StrokeEvent, to: StrokeEvent): void {
@@ -101,9 +141,11 @@ class StrokeImpl extends Stroke {
 		glBindResources([this.layer.bindFramebuffer()], () => {
 			this.brush.drawSegment(segment);
 		});
+
+		this.marker.markNeedsRedraw();
 	}
 
 	complete(): void {
-		// TODO: Apply painted texture to dirty canvas tiles
+		this.onComplete();
 	}
 }
