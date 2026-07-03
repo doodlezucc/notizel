@@ -41,6 +41,7 @@
 		display: grid;
 		place-items: center;
 		flex: 1;
+		touch-action: none;
 	}
 
 	.background {

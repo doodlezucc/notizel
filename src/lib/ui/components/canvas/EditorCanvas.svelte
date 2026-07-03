@@ -25,5 +25,5 @@
 
 	<AreaSelection bind:this={areaSelection} />
 
-	<DoodlingCanvas />
+	<DoodlingCanvas transform={ui.camera} />
 </EditorCanvasInputScope>

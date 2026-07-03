@@ -1,9 +1,13 @@
 <script lang="ts">
 	import { type CameraTransform } from '$lib/data/common';
 	import { RasterDoodlingEngine, Stroke } from '$lib/packages/doodling';
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
 
-	const transform: CameraTransform = { position: { x: 0, y: 0 }, scale: 1 };
+	interface Props {
+		transform: CameraTransform;
+	}
+
+	let { transform }: Props = $props();
 
 	let canvas = $state<HTMLCanvasElement>();
 	let width = $state(0);
@@ -20,7 +24,9 @@
 
 	$effect(() => {
 		if (engine && width && height) {
-			engine.render(transform, { width, height });
+			untrack(() => {
+				engine!.render(transform, { width, height });
+			});
 		}
 	});
 
@@ -57,7 +63,7 @@
 	const radius = 20;
 
 	function onPointerDown(ev: PointerEvent) {
-		if (!engine) return;
+		if (!engine || ev.button !== 0) return;
 
 		ev.preventDefault();
 
@@ -112,6 +118,6 @@
 		right: 0;
 		bottom: 0;
 
-		touch-action: none;
+		pointer-events: none;
 	}
 </style>
