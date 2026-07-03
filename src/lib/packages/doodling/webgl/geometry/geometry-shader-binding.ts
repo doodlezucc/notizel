@@ -1,4 +1,4 @@
-import { GLResource, type GL, type UnbindFunction } from '../resource';
+import { GLResource, type GL } from '../resource';
 
 export class GLGeometryShaderBinding extends GLResource {
 	private readonly vao: WebGLVertexArrayObject;
@@ -10,12 +10,10 @@ export class GLGeometryShaderBinding extends GLResource {
 
 		this.gl.bindVertexArray(this.vao);
 		initialize();
-		this.gl.bindVertexArray(null);
 	}
 
-	bindVertexArray(): UnbindFunction {
+	bindVertexArray() {
 		this.gl.bindVertexArray(this.vao);
-		return () => this.gl.bindVertexArray(null);
 	}
 
 	override destroy(): void {

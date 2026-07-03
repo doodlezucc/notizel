@@ -49,6 +49,7 @@ export class RasterDoodlingEngine {
 
 		const gl = this.gl;
 
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		gl.viewport(0, 0, viewport.width, viewport.height);
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT);

@@ -19,7 +19,6 @@ export abstract class GLGeometry2D extends GLResource {
 		this.buffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
 		gl.bufferData(gl.ARRAY_BUFFER, vertexArray, gl.STATIC_DRAW);
-		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 	}
 
 	createShaderBinding(locations: UVVertexLocations) {
@@ -39,8 +38,6 @@ export abstract class GLGeometry2D extends GLResource {
 
 			gl.vertexAttribPointer(loc.uv, 2, gl.FLOAT, false, stride, positionSize);
 			gl.enableVertexAttribArray(loc.uv);
-
-			gl.bindBuffer(gl.ARRAY_BUFFER, null);
 		});
 	}
 

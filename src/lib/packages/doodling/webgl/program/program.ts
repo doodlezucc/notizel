@@ -1,4 +1,4 @@
-import { GLResource, type GL, type UnbindFunction } from '../resource';
+import { GLResource, type GL } from '../resource';
 import { createWebGLProgram } from './create-program';
 
 interface WebGLProgramDescription {
@@ -86,15 +86,13 @@ export class GLProgram<
 		return new GLProgram(gl, program, locations);
 	}
 
-	bindProgram(uniforms: UniformsConfiguration<TUniform>): UnbindFunction {
+	bindProgram(uniforms: UniformsConfiguration<TUniform>) {
 		this.gl.useProgram(this.program);
 
 		for (const name in uniforms) {
 			const configure = uniforms[name];
 			configure(this.uniforms[name]);
 		}
-
-		return () => this.gl.useProgram(null);
 	}
 
 	override destroy(): void {

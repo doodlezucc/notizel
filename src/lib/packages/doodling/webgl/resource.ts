@@ -9,15 +9,3 @@ export abstract class GLResource {
 
 	abstract destroy(): void;
 }
-
-export type UnbindFunction = () => void;
-
-export function glBindResources(resources: UnbindFunction[], body: () => void) {
-	try {
-		body();
-	} finally {
-		for (const unbind of resources) {
-			unbind();
-		}
-	}
-}

@@ -1,5 +1,5 @@
 import type { Size } from '$lib/data/common';
-import { glBindResources, GLResource, type GL, type UnbindFunction } from '../resource';
+import { GLResource, type GL } from '../resource';
 
 export class GLDrawableTexture extends GLResource {
 	readonly texture: WebGLTexture;
@@ -16,20 +16,17 @@ export class GLDrawableTexture extends GLResource {
 		this.gl.deleteTexture(this.texture);
 	}
 
-	bindFramebuffer(): UnbindFunction {
+	bindFramebuffer() {
 		const gl = this.gl;
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
-
-		return () => gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
 
 	clear() {
-		glBindResources([this.bindFramebuffer()], () => {
-			this.gl.clearColor(0, 0, 0, 0);
-			this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-		});
+		this.bindFramebuffer();
+
+		this.gl.clearColor(0, 0, 0, 0);
+		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 	}
 
 	private static createTexture(gl: WebGL2RenderingContext, size: Size) {
@@ -43,7 +40,6 @@ export class GLDrawableTexture extends GLResource {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-		gl.bindTexture(gl.TEXTURE_2D, null);
 		return texture;
 	}
 
@@ -69,7 +65,6 @@ export class GLDrawableTexture extends GLResource {
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		return framebuffer;
 	}
 }

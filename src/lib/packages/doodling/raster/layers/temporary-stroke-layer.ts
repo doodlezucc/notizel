@@ -4,7 +4,7 @@ import type { GLQuad } from '../../webgl/geometry/quad';
 import { GLDrawableTexture } from '../../webgl/misc/drawable-texture';
 import { GLProgram, type GLProgramOf } from '../../webgl/program/program';
 import type { RedrawMarker } from '../../webgl/redraw-marker';
-import { glBindResources, type GL, type UnbindFunction } from '../../webgl/resource';
+import type { GL } from '../../webgl/resource';
 import type { Brush } from '../brush';
 import { Layer } from '../layer';
 import { shaderUnlitTexture } from '../shaders/unlit-texture';
@@ -49,26 +49,19 @@ export class TemporaryStrokeLayer extends Layer {
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this.drawableTexture.texture);
 
-		glBindResources(
-			[
-				this.clipSpaceQuadUnlitVAO.bindVertexArray(),
-				this.unlitTextureProgram.bindProgram({
-					texture: (loc) => gl.uniform1i(loc, 0)
-				})
-			],
-			() => {
-				gl.disable(gl.DEPTH_TEST);
-				gl.enable(gl.BLEND);
-				gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-				gl.drawArrays(gl.TRIANGLES, 0, 6);
-			}
-		);
+		this.clipSpaceQuadUnlitVAO.bindVertexArray();
+		this.unlitTextureProgram.bindProgram({
+			texture: (loc) => gl.uniform1i(loc, 0)
+		});
 
-		gl.bindTexture(gl.TEXTURE_2D, null);
+		gl.disable(gl.DEPTH_TEST);
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+		gl.drawArrays(gl.TRIANGLES, 0, 6);
 	}
 
-	bindFramebuffer(): UnbindFunction {
-		return this.drawableTexture.bindFramebuffer();
+	bindFramebuffer() {
+		this.drawableTexture.bindFramebuffer();
 	}
 
 	createStroke(brush: Brush, radiusSetting: number): Stroke {
@@ -125,10 +118,8 @@ class StrokeImpl extends Stroke {
 	protected drawInitialEvent(event: StrokeEvent): void {
 		const point = this.transformEventToPoint(event);
 
-		glBindResources([this.layer.bindFramebuffer()], () => {
-			this.brush.drawInitialPoint(point);
-		});
-
+		this.layer.bindFramebuffer();
+		this.brush.drawInitialPoint(point);
 		this.marker.markNeedsRedraw();
 	}
 
@@ -138,10 +129,8 @@ class StrokeImpl extends Stroke {
 			this.transformEventToPoint(to)
 		);
 
-		glBindResources([this.layer.bindFramebuffer()], () => {
-			this.brush.drawSegment(segment);
-		});
-
+		this.layer.bindFramebuffer();
+		this.brush.drawSegment(segment);
 		this.marker.markNeedsRedraw();
 	}
 

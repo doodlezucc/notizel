@@ -1,7 +1,7 @@
 import type { GLGeometryShaderBinding } from '../webgl/geometry/geometry-shader-binding';
 import type { GLQuad } from '../webgl/geometry/quad';
 import { GLProgram, type GLProgramOf } from '../webgl/program/program';
-import { glBindResources, GLResource, type GL } from '../webgl/resource';
+import { GLResource, type GL } from '../webgl/resource';
 import { shaderBrush } from './shaders/brush';
 import type { StrokePoint, StrokeSegment } from './stroke-segment';
 
@@ -29,17 +29,12 @@ export class StampBrush extends GLResource implements Brush {
 	}
 
 	drawInitialPoint(point: StrokePoint) {
-		glBindResources(
-			[
-				this.clipSpaceQuadBrushVAO.bindVertexArray(),
-				this.brushProgram.bindProgram({
-					color: (loc) => this.gl.uniform4f(loc, 1.0, 0.5, 0.3, 1.0)
-				})
-			],
-			() => {
-				this.drawStamp(point);
-			}
-		);
+		this.clipSpaceQuadBrushVAO.bindVertexArray();
+		this.brushProgram.bindProgram({
+			color: (loc) => this.gl.uniform4f(loc, 1.0, 0.5, 0.3, 1.0)
+		});
+
+		this.drawStamp(point);
 	}
 
 	drawSegment(segment: StrokeSegment) {
@@ -59,19 +54,14 @@ export class StampBrush extends GLResource implements Brush {
 
 		pointsToStamp.push(segment.to);
 
-		glBindResources(
-			[
-				this.clipSpaceQuadBrushVAO.bindVertexArray(),
-				this.brushProgram.bindProgram({
-					color: (loc) => this.gl.uniform4f(loc, 1.0, 0.5, 0.3, 1.0)
-				})
-			],
-			() => {
-				for (const point of pointsToStamp) {
-					this.drawStamp(point);
-				}
-			}
-		);
+		this.clipSpaceQuadBrushVAO.bindVertexArray();
+		this.brushProgram.bindProgram({
+			color: (loc) => this.gl.uniform4f(loc, 1.0, 0.5, 0.3, 1.0)
+		});
+
+		for (const point of pointsToStamp) {
+			this.drawStamp(point);
+		}
 	}
 
 	private drawStamp(point: StrokePoint) {
