@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Vectors, type CameraTransform, type Vector } from '$lib/data/common';
+	import { type CameraTransform, type Vector } from '$lib/data/common';
 	import { RasterDoodlingEngine } from '$lib/packages/doodling';
 	import { onDestroy, onMount } from 'svelte';
 
@@ -58,10 +58,15 @@
 	const radius = 20;
 
 	function onPointerDown(ev: PointerEvent) {
+		if (!engine) return;
+
 		ev.preventDefault();
 
 		const pointer = { x: ev.pageX, y: ev.pageY };
-		engine?.paint(pointer, radius * ev.pressure);
+		engine.paintPointWithBrush({
+			position: pointer,
+			radius: radius * ev.pressure
+		});
 
 		gesture = { previousPointer: pointer, previousPressure: ev.pressure };
 		needsRepaint = true;
@@ -75,22 +80,11 @@
 		const pointer = { x: ev.pageX, y: ev.pageY };
 		const pressure = ev.pressure;
 
-		const smallestRadius = Math.max(1, radius * Math.min(previousPressure, pressure));
+		engine.paintSegmentWithBrush(
+			{ position: previousPointer, radius: previousPressure * radius },
+			{ position: pointer, radius: pressure * radius }
+		);
 
-		const distance = Vectors.distance(pointer, previousPointer);
-
-		const maxDistanceBetweenStamps = Math.min(2, smallestRadius);
-
-		const steps = Math.floor(distance / maxDistanceBetweenStamps);
-
-		for (let i = 1; i < steps; i++) {
-			const t = i / steps;
-			const v = Vectors.interpolate(previousPointer, pointer, t);
-			const p = previousPressure + t * (pressure - previousPressure);
-			engine.paint(v, radius * p);
-		}
-
-		engine.paint(pointer, radius * pressure);
 		needsRepaint = true;
 
 		gesture.previousPointer = pointer;
