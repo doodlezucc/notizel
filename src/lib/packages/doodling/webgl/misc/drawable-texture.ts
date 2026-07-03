@@ -1,14 +1,14 @@
 import type { Size } from '$lib/data/common';
 import { GLResource, type GL, type UnbindFunction } from '../resource';
 
-export class GLStampableTexture extends GLResource {
+export class GLDrawableTexture extends GLResource {
 	readonly texture: WebGLTexture;
 	private readonly framebuffer: WebGLFramebuffer;
 
 	constructor(gl: GL, size: Size) {
 		super(gl);
-		this.texture = GLStampableTexture.createTexture(gl, size);
-		this.framebuffer = GLStampableTexture.createFramebuffer(gl, this.texture);
+		this.texture = GLDrawableTexture.createTexture(gl, size);
+		this.framebuffer = GLDrawableTexture.createFramebuffer(gl, this.texture);
 	}
 
 	override destroy() {

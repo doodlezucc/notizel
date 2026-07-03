@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { type CameraTransform, type Vector } from '$lib/data/common';
-	import { RasterDoodlingEngine } from '$lib/packages/doodling';
+	import { type CameraTransform } from '$lib/data/common';
+	import { RasterDoodlingEngine, Stroke } from '$lib/packages/doodling';
 	import { onDestroy, onMount } from 'svelte';
 
 	const transform: CameraTransform = { position: { x: 0, y: 0 }, scale: 1 };
@@ -49,8 +49,7 @@
 	});
 
 	interface BrushGesture {
-		previousPointer: Vector;
-		previousPressure: number;
+		stroke: Stroke;
 	}
 
 	let gesture: BrushGesture | undefined;
@@ -62,37 +61,34 @@
 
 		ev.preventDefault();
 
-		const pointer = { x: ev.pageX, y: ev.pageY };
-		engine.paintPointWithBrush({
-			position: pointer,
-			radius: radius * ev.pressure
-		});
+		const stroke = engine.startStroke(
+			{
+				pointer: { x: ev.pageX, y: ev.pageY },
+				pressure: ev.pressure
+			},
+			radius
+		);
 
-		gesture = { previousPointer: pointer, previousPressure: ev.pressure };
+		gesture = { stroke: stroke };
 		needsRepaint = true;
 	}
 
 	function onPointerMove(ev: PointerEvent) {
 		if (!gesture || !engine) return;
 
-		const { previousPointer, previousPressure } = gesture;
-
-		const pointer = { x: ev.pageX, y: ev.pageY };
-		const pressure = ev.pressure;
-
-		engine.paintSegmentWithBrush(
-			{ position: previousPointer, radius: previousPressure * radius },
-			{ position: pointer, radius: pressure * radius }
-		);
+		gesture.stroke.emit({
+			pointer: { x: ev.pageX, y: ev.pageY },
+			pressure: ev.pressure
+		});
 
 		needsRepaint = true;
-
-		gesture.previousPointer = pointer;
-		gesture.previousPressure = pressure;
 	}
 
 	function onPointerUp() {
-		gesture = undefined;
+		if (gesture) {
+			gesture.stroke.complete();
+			gesture = undefined;
+		}
 	}
 </script>
 

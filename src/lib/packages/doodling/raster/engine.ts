@@ -1,12 +1,11 @@
 import type { CameraTransform, Size } from '$lib/data/common';
 import type { GLGeometryShaderBinding } from '../webgl/geometry/geometry-shader-binding';
 import { GLQuad } from '../webgl/geometry/quad';
-import { GLStampableTexture } from '../webgl/misc/stampable-texture';
 import { GLProgram, type GLProgramOf } from '../webgl/program/program';
 import { glBindResources } from '../webgl/resource';
 import { StampBrush, type Brush } from './brush';
 import { shaderUnlitTexture } from './shaders/unlit-texture';
-import { LinearStrokeSegment, type StrokePoint } from './stroke-segment';
+import { TemporaryStrokeLayer, type Stroke, type StrokeEvent } from './stroke';
 
 export class RasterDoodlingEngine {
 	private readonly gl: WebGL2RenderingContext;
@@ -15,9 +14,9 @@ export class RasterDoodlingEngine {
 
 	private readonly clipSpaceQuad: GLQuad;
 	private readonly clipSpaceQuadUnlitVAO: GLGeometryShaderBinding;
-	private readonly stampable: GLStampableTexture;
 
 	private readonly brush: Brush;
+	private readonly temporaryStrokeLayer: TemporaryStrokeLayer;
 
 	constructor(gl: WebGL2RenderingContext, size: Size) {
 		this.gl = gl;
@@ -28,9 +27,9 @@ export class RasterDoodlingEngine {
 			position: this.unlitTextureProgram.attributes.position,
 			uv: this.unlitTextureProgram.attributes.texCoord
 		});
-		this.stampable = new GLStampableTexture(gl, size);
 
 		this.brush = new StampBrush(gl, this.clipSpaceQuad);
+		this.temporaryStrokeLayer = new TemporaryStrokeLayer(gl, size);
 	}
 
 	dispose() {
@@ -38,23 +37,16 @@ export class RasterDoodlingEngine {
 
 		this.clipSpaceQuad.destroy();
 		this.clipSpaceQuadUnlitVAO.destroy();
-		this.stampable.destroy();
 
 		this.brush.destroy();
+		this.temporaryStrokeLayer.destroy();
 	}
 
-	paintPointWithBrush(point: StrokePoint) {
-		glBindResources([this.stampable.bindFramebuffer()], () => {
-			this.brush.drawInitialPoint(point);
-		});
-	}
+	startStroke(initialEvent: StrokeEvent, radiusSetting: number): Stroke {
+		const stroke = this.temporaryStrokeLayer.createStroke(this.brush, radiusSetting);
+		stroke.emit(initialEvent);
 
-	paintSegmentWithBrush(from: StrokePoint, to: StrokePoint) {
-		const segment = new LinearStrokeSegment(from, to);
-
-		glBindResources([this.stampable.bindFramebuffer()], () => {
-			this.brush.drawSegment(segment);
-		});
+		return stroke;
 	}
 
 	render(camera: CameraTransform, viewport: Size) {
@@ -67,7 +59,7 @@ export class RasterDoodlingEngine {
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
 		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, this.stampable.texture);
+		gl.bindTexture(gl.TEXTURE_2D, this.temporaryStrokeLayer.texture);
 
 		glBindResources(
 			[
