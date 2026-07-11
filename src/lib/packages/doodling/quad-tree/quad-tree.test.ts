@@ -1,4 +1,3 @@
-import { AxisAlignedBoundingBox } from '$lib/data/common';
 import { expect, test } from 'vitest';
 import { QuadTree } from './quad-tree';
 
@@ -20,9 +19,7 @@ test.each([
 	tree.addTileUnsafe(0, { x: 2, y: -3 }, '2,-3');
 	tree.addTileUnsafe(0, { x: -5, y: 2 }, '-5,2');
 
-	expect(tree.findTilesOverlappingBox(AxisAlignedBoundingBox.fromPoints(a, b))).toEqual(
-		expectedTiles
-	);
+	expect(tree.findTilesOverlappingRect({ topLeft: a, bottomRight: b })).toEqual(expectedTiles);
 });
 
 test('1-level grid', () => {
@@ -38,8 +35,9 @@ test('1-level grid', () => {
 	tree.increaseRootLevel();
 
 	expect(
-		tree.findTilesOverlappingBox(
-			AxisAlignedBoundingBox.fromPoints({ x: 1.8, y: 1.3 }, { x: 3.2, y: 1.9 })
-		)
+		tree.findTilesOverlappingRect({
+			topLeft: { x: 1.8, y: 1.3 },
+			bottomRight: { x: 3.2, y: 1.9 }
+		})
 	).toEqual(['1,1', '2,1', '3,1']);
 });

@@ -1,9 +1,19 @@
-import type { AxisAlignedBoundingBox, Vector } from '$lib/data/common';
+import type { Vector } from '$lib/data/common';
 
 type Coord = `${number};${number}`;
 
 function tileCoord(x: number, y: number): Coord {
 	return `${x};${y}`;
+}
+
+interface LTRBRect {
+	topLeft: Vector;
+	bottomRight: Vector;
+}
+
+interface PopulateOptions<T> {
+	detailLevel: number;
+	createTileData: (level: number, position: Vector) => T;
 }
 
 // One arbitrary decision:
@@ -53,16 +63,18 @@ export class QuadTree<T> {
 		this.rootNodes = newRootNodes;
 	}
 
-	findTilesOverlappingBox(box: AxisAlignedBoundingBox): T[] {
+	populateTilesOverlappingRect(rect: LTRBRect, options: PopulateOptions<T>): T[] {}
+
+	findTilesOverlappingRect(rect: LTRBRect): T[] {
 		const result: T[] = [];
 
 		const rootTileSize = Math.pow(2, this.rootLevel);
 		const inverseRootTileSize = 1 / rootTileSize;
 
-		const minX = box.topLeft.x * inverseRootTileSize;
-		const minY = box.topLeft.y * inverseRootTileSize;
-		const maxX = box.bottomRight.x * inverseRootTileSize;
-		const maxY = box.bottomRight.y * inverseRootTileSize;
+		const minX = rect.topLeft.x * inverseRootTileSize;
+		const minY = rect.topLeft.y * inverseRootTileSize;
+		const maxX = rect.bottomRight.x * inverseRootTileSize;
+		const maxY = rect.bottomRight.y * inverseRootTileSize;
 
 		const minTileX = Math.floor(minX);
 		const minTileY = Math.floor(minY);
@@ -79,12 +91,16 @@ export class QuadTree<T> {
 				if (node) {
 					if (node instanceof TreeContainerNode && isEdge(x, y)) {
 						result.push(
-							...node.getDescendantDataInBounds(
-								minX - minTileX - x,
-								minY - minTileY - y,
-								maxX - minTileX - x,
-								maxY - minTileY - y
-							)
+							...node.getDescendantDataInBounds({
+								topLeft: {
+									x: minX - minTileX - x,
+									y: minY - minTileY - y
+								},
+								bottomRight: {
+									x: maxX - minTileX - x,
+									y: maxY - minTileY - y
+								}
+							})
 						);
 					} else {
 						result.push(...node.selfOrDescendantData);
@@ -132,79 +148,80 @@ class TreeContainerNode<T> extends TreeNode<T> {
 		return result;
 	}
 
-	private getChildDataOrDescendants(
-		index: number,
-		computeDescendants: (container: TreeContainerNode<T>) => T[]
-	): T[] {
-		const child = this.children[index];
-
-		if (child instanceof TreeTileNode) {
-			return [child.data];
-		} else if (child instanceof TreeContainerNode) {
-			return computeDescendants(child as TreeContainerNode<T>);
-		} else {
-			return [];
-		}
-	}
-
 	setChild(x: number, y: number, node: TreeNode<T>) {
 		this.children[x + y * 2] = node;
 	}
 
-	getDescendantDataInBounds(ax: number, ay: number, bx: number, by: number): T[] {
+	private processQuadrantsOverlappingRect(
+		rect: LTRBRect,
+		processQuadrant: (node: TreeNode<T> | undefined, localRect: LTRBRect) => void
+	) {
+		const {
+			topLeft: { x: ax, y: ay },
+			bottomRight: { x: bx, y: by }
+		} = rect;
+
 		if (ax > 1 || ay > 1 || bx < 0 || by < 0) {
-			return [];
+			return;
 		}
 
 		if (ax <= 0 && ay <= 0 && bx >= 1 && by >= 1) {
-			return this.selfOrDescendantData;
+			for (const child of this.children) {
+				processQuadrant(child, rect);
+			}
+			return;
 		}
-
-		const result: T[] = [];
 
 		if (ax < 0.5) {
 			if (ay < 0.5) {
-				result.push(
-					...this.getChildDataOrDescendants(0, (container) =>
-						container.getDescendantDataInBounds(ax * 2, ay * 2, bx * 2, by * 2)
-					)
-				);
+				processQuadrant(this.children[0], {
+					topLeft: { x: ax * 2, y: ay * 2 },
+					bottomRight: { x: bx * 2, y: by * 2 }
+				});
 			}
 
 			if (by > 0.5) {
-				result.push(
-					...this.getChildDataOrDescendants(2, (container) =>
-						container.getDescendantDataInBounds(ax * 2, ay * 2 - 0.5, bx * 2, by * 2 - 0.5)
-					)
-				);
+				processQuadrant(this.children[2], {
+					topLeft: { x: ax * 2, y: ay * 2 - 0.5 },
+					bottomRight: { x: bx * 2, y: by * 2 - 0.5 }
+				});
 			}
 		}
 
 		if (bx > 0.5) {
 			if (ay < 0.5) {
-				result.push(
-					...this.getChildDataOrDescendants(1, (container) =>
-						container.getDescendantDataInBounds(ax * 2 - 0.5, ay * 2, bx * 2 - 0.5, by * 2)
-					)
-				);
+				processQuadrant(this.children[1], {
+					topLeft: { x: ax * 2 - 0.5, y: ay * 2 },
+					bottomRight: { x: bx * 2 - 0.5, y: by * 2 }
+				});
 			}
 
 			if (by > 0.5) {
-				result.push(
-					...this.getChildDataOrDescendants(3, (container) =>
-						container.getDescendantDataInBounds(
-							ax * 2 - 0.5,
-							ay * 2 - 0.5,
-							bx * 2 - 0.5,
-							by * 2 - 0.5
-						)
-					)
-				);
+				processQuadrant(this.children[3], {
+					topLeft: { x: ax * 2 - 0.5, y: ay * 2 - 0.5 },
+					bottomRight: { x: bx * 2 - 0.5, y: by * 2 - 0.5 }
+				});
 			}
 		}
+	}
+
+	getDescendantDataInBounds(rect: LTRBRect): T[] {
+		const result: T[] = [];
+
+		const processQuadrant = (quadrant: TreeNode<T> | undefined, localRect: LTRBRect) => {
+			if (quadrant instanceof TreeTileNode) {
+				result.push(quadrant.data);
+			} else if (quadrant instanceof TreeContainerNode) {
+				quadrant.processQuadrantsOverlappingRect(localRect, processQuadrant);
+			}
+		};
+
+		this.processQuadrantsOverlappingRect(rect, processQuadrant);
 
 		return result;
 	}
+
+	populate(options: PopulateOptions<T>) {}
 }
 
 class TreeTileNode<T> extends TreeNode<T> {
