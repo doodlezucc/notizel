@@ -43,7 +43,7 @@ test('1-level grid', () => {
 	).toEqual(['1,1', '2,1', '3,1']);
 });
 
-test('Populate 1-level grid', () => {
+test('Populate flat level grid 1 level smaller', () => {
 	const tree = new QuadTree<TileData>();
 
 	for (let x = -1; x <= 0; x++) {
@@ -119,4 +119,81 @@ test('Populate 1-level grid', () => {
 
 	// Assert only a single new leaf to have been created
 	expect(dataProvider.createTile).toHaveBeenCalledExactlyOnceWith(-1, { x: 2, y: 1 });
+});
+
+test('Populate flat level grid 2 levels smaller', () => {
+	const tree = new QuadTree<TileData>();
+	tree.increaseRootLevel();
+	tree.addTileUnsafe(1, { x: 0, y: 0 }, `1(0,0)`);
+
+	const dataProvider = {
+		createTile: vi.fn((level: number, { x, y }: Vector): TileData => `${level}(${x},${y})`),
+		disposeTile: vi.fn<(tile: Tile<TileData>) => void>(),
+		subdivideTile: vi.fn(
+			({ level, position: { x, y } }: Tile<TileData>): QuadrantTuple<TileData> => [
+				`${level - 1}(${x * 2},${y * 2})`,
+				`${level - 1}(${x * 2 + 1},${y * 2})`,
+				`${level - 1}(${x * 2},${y * 2 + 1})`,
+				`${level - 1}(${x * 2 + 1},${y * 2 + 1})`
+			]
+		)
+	} satisfies TileDataProvider<TileData>;
+
+	const overlappingTiles = tree.populateTilesOverlappingRect(
+		{
+			topLeft: { x: -0.6, y: -0.1 },
+			bottomRight: { x: 2.1, y: 0.6 }
+		},
+		{
+			dataProvider: dataProvider,
+			targetLevel: -1
+		}
+	);
+
+	expect(overlappingTiles).toHaveLength(21);
+	expect(overlappingTiles.map((tile) => tile.data)).toEqual(
+		expect.arrayContaining([
+			...['-1(-2,-1)', '-1(-1,-1)', '-1(0,-1)', '-1(1,-1)', '-1(2,-1)', '-1(3,-1)', '-1(4,-1)'],
+			...['-1(-2,0)', '-1(-1,0)', '-1(0,0)', '-1(1,0)', '-1(2,0)', '-1(3,0)', '-1(4,0)'],
+			...['-1(-2,1)', '-1(-1,1)', '-1(0,1)', '-1(1,1)', '-1(2,1)', '-1(3,1)', '-1(4,1)']
+		])
+	);
+
+	// Assert the initial level 1 tile to have been subdivided
+	// Assert -1,0 and 0,0 to have been subdivided further
+	expect(dataProvider.subdivideTile).toHaveBeenCalledTimes(3);
+	expect(dataProvider.subdivideTile.mock.calls[0][0].data).toEqual('1(0,0)');
+	expect(dataProvider.subdivideTile.mock.calls[1][0].data).toEqual('0(0,0)');
+	expect(dataProvider.subdivideTile.mock.calls[2][0].data).toEqual('0(1,0)');
+
+	// Assert subdivided tiles to have been disposed
+	expect(dataProvider.disposeTile).toHaveBeenCalledTimes(3);
+	expect(dataProvider.disposeTile.mock.calls[0][0].data).toEqual('1(0,0)');
+	expect(dataProvider.disposeTile.mock.calls[1][0].data).toEqual('0(0,0)');
+	expect(dataProvider.disposeTile.mock.calls[2][0].data).toEqual('0(1,0)');
+
+	// Assert new level -1 leaves to have been created (excluding tiles created through subdivision)
+	expect(dataProvider.createTile).toHaveBeenCalledTimes(13);
+	expect(dataProvider.createTile.mock.calls).toEqual(
+		expect.arrayContaining([
+			// Tiles to the left of the initial level 1 tile
+			[-1, { x: -2, y: -1 }],
+			[-1, { x: -1, y: -1 }],
+			[-1, { x: -2, y: 0 }],
+			[-1, { x: -1, y: 0 }],
+			[-1, { x: -2, y: 1 }],
+			[-1, { x: -1, y: 1 }],
+
+			// Tiles above the initial level 1 tile
+			[-1, { x: 0, y: -1 }],
+			[-1, { x: 1, y: -1 }],
+			[-1, { x: 2, y: -1 }],
+			[-1, { x: 3, y: -1 }],
+
+			// Tiles to the right of the initial level 1 tile
+			[-1, { x: 4, y: -1 }],
+			[-1, { x: 4, y: 0 }],
+			[-1, { x: 4, y: 1 }]
+		])
+	);
 });

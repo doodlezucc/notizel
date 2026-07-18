@@ -304,13 +304,11 @@ class TreeContainerNode<T> extends TreeNode<T> {
 		}
 
 		const computeQuadrantContext = (position: Vector): QuadrantContext => {
-			const xOffset = position.x * 0.5;
-			const yOffset = position.y * 0.5;
 			return {
 				positionInContainer: position,
 				localRect: {
-					topLeft: { x: rect.topLeft.x * 2 - xOffset, y: rect.topLeft.y * 2 - yOffset },
-					bottomRight: { x: rect.bottomRight.x * 2 - xOffset, y: rect.bottomRight.y * 2 - yOffset }
+					topLeft: { x: ax * 2 - position.x, y: ay * 2 - position.y },
+					bottomRight: { x: bx * 2 - position.x, y: by * 2 - position.y }
 				}
 			};
 		};
@@ -409,7 +407,7 @@ class TreeContainerNode<T> extends TreeNode<T> {
 					result.push(
 						...quadrant.populate({
 							dataProvider: dataProvider,
-							levelOffset: levelOffset - 1,
+							levelOffset: levelOffset + 1,
 							rect: context.localRect
 						})
 					);
