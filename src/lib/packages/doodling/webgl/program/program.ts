@@ -28,9 +28,8 @@ export function describeWebGLProgram<T extends WebGLProgramDescription>(descript
 	return description;
 }
 
-type UniformsConfiguration<T extends PropertyKey> = Record<
-	T,
-	(location: WebGLUniformLocation) => void
+type UniformsConfiguration<T extends PropertyKey> = Partial<
+	Record<T, (location: WebGLUniformLocation) => void>
 >;
 
 export class GLProgram<
@@ -86,12 +85,12 @@ export class GLProgram<
 		return new GLProgram(gl, program, locations);
 	}
 
-	bindProgram(uniforms: UniformsConfiguration<TUniform>) {
+	bindProgram(uniforms?: UniformsConfiguration<TUniform>) {
 		this.gl.useProgram(this.program);
 
 		for (const name in uniforms) {
 			const configure = uniforms[name];
-			configure(this.uniforms[name]);
+			configure?.(this.uniforms[name]);
 		}
 	}
 

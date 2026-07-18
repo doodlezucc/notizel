@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { type CameraTransform } from '$lib/data/common';
 	import { RasterDoodlingEngine, Stroke } from '$lib/packages/doodling';
-	import { onDestroy, untrack } from 'svelte';
+	import { onDestroy } from 'svelte';
 
 	interface Props {
 		transform: CameraTransform;
@@ -24,9 +24,7 @@
 
 	$effect(() => {
 		if (engine && width && height) {
-			untrack(() => {
-				engine!.render(transform, { width, height });
-			});
+			engine!.render({ position: transform.position, scale: transform.scale }, { width, height });
 		}
 	});
 

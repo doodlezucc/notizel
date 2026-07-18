@@ -4,12 +4,15 @@ import { AnimationRedrawMarker } from '../webgl/redraw-marker';
 import { StampBrush, type Brush } from './brush';
 import { TemporaryStrokeLayer } from './layers/temporary-stroke-layer';
 import type { Stroke, StrokeEvent } from './stroke';
+import { TileLayer } from './tiling/tile-layer';
 
 export class RasterDoodlingEngine {
 	private readonly gl: WebGL2RenderingContext;
 	private readonly marker = new AnimationRedrawMarker(() => this.redraw());
 
 	private readonly clipSpaceQuad: GLQuad;
+
+	private readonly tileLayer: TileLayer;
 
 	private readonly brush: Brush;
 	private readonly temporaryStrokeLayer: TemporaryStrokeLayer;
@@ -21,6 +24,8 @@ export class RasterDoodlingEngine {
 		this.gl = gl;
 
 		this.clipSpaceQuad = GLQuad.fullClipSpace(gl);
+
+		this.tileLayer = new TileLayer(gl);
 
 		this.brush = new StampBrush(gl, this.clipSpaceQuad);
 		this.temporaryStrokeLayer = new TemporaryStrokeLayer(gl, this.marker, size, this.clipSpaceQuad);
@@ -45,6 +50,12 @@ export class RasterDoodlingEngine {
 	}
 
 	render(camera: CameraTransform, viewport: Size) {
+		this.camera = camera;
+		this.viewport = viewport;
+		this.marker.markNeedsRedraw();
+	}
+
+	private draw(camera: CameraTransform, viewport: Size) {
 		console.log('drawing');
 
 		const gl = this.gl;
@@ -54,13 +65,11 @@ export class RasterDoodlingEngine {
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
+		this.tileLayer.render(camera, viewport);
 		this.temporaryStrokeLayer.render(camera, viewport);
-
-		this.camera = camera;
-		this.viewport = viewport;
 	}
 
 	private redraw() {
-		this.render(this.camera, this.viewport);
+		this.draw(this.camera, this.viewport);
 	}
 }

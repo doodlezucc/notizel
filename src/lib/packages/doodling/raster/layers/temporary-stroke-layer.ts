@@ -24,8 +24,8 @@ export class TemporaryStrokeLayer extends Layer {
 		super(gl);
 
 		this.marker = redrawMarker;
-		this.unlitTextureProgram = GLProgram.create(gl, shaderUnlitTexture);
 		this.drawableTexture = new GLDrawableTexture(gl, size);
+		this.unlitTextureProgram = GLProgram.create(gl, shaderUnlitTexture);
 		this.clipSpaceQuadUnlitVAO = clipSpaceQuad.createShaderBinding({
 			position: this.unlitTextureProgram.attributes.position,
 			uv: this.unlitTextureProgram.attributes.texCoord
