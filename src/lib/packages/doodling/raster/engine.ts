@@ -28,7 +28,17 @@ export class RasterDoodlingEngine {
 		this.tileLayer = new TileLayer(gl);
 
 		this.brush = new StampBrush(gl, this.clipSpaceQuad);
-		this.temporaryStrokeLayer = new TemporaryStrokeLayer(gl, this.marker, size, this.clipSpaceQuad);
+		this.temporaryStrokeLayer = new TemporaryStrokeLayer(
+			gl,
+			this.marker,
+			{
+				applyTexture: (texture) => {
+					this.tileLayer.paintTextureToTiles(texture);
+				}
+			},
+			size,
+			this.clipSpaceQuad
+		);
 
 		this.camera = camera;
 		this.viewport = size;

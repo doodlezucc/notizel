@@ -14,7 +14,7 @@ const VERTEX_SHADER_SRC = `#version 300 es
     v_uv = a_uv;
     
     float scale = exp2(u_instanceLevel);
-    vec2 worldPosition = a_position * scale + u_instancePosition;
+    vec2 worldPosition = (a_position + vec2(u_instancePosition.x, -u_instancePosition.y - 1.0)) * scale;
     vec3 clip = u_viewProjection * vec3(worldPosition * 256.0, 1.0);
 
     gl_Position = vec4(clip.xy, 0.0, 1.0);

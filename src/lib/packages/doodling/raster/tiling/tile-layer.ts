@@ -1,4 +1,5 @@
-import type { CameraTransform, Size, Vector } from '$lib/data/common';
+import type { CameraTransform, Size } from '$lib/data/common';
+import type { LTRBRect } from '../../quad-tree/quad-tree';
 import type { GLGeometryShaderBinding } from '../../webgl/geometry/geometry-shader-binding';
 import { GLQuad } from '../../webgl/geometry/quad';
 import { GLProgram, type GLProgramOf } from '../../webgl/program/program';
@@ -10,9 +11,9 @@ import { TileTree } from './tile-tree';
 
 export interface OverlayedTexture {
 	texture: WebGLTexture;
-	topLeft: Vector;
-	size: Size;
-	resolution: Size;
+	textureBounds: LTRBRect;
+	cropBounds: LTRBRect;
+	detailLevel: number;
 }
 
 interface DoodleSnapshot {}
@@ -33,14 +34,6 @@ export class TileLayer extends Layer {
 			position: this.texturedTileProgram.attributes.position,
 			uv: this.texturedTileProgram.attributes.uv
 		});
-
-		this.tileTree.populateTilesOverlappingRect(
-			{
-				topLeft: { x: -1000 / TextureTile.size, y: -1000 / TextureTile.size },
-				bottomRight: { x: 1000 / TextureTile.size, y: 1000 / TextureTile.size }
-			},
-			0
-		);
 
 		// this.tileInstanceBuffer = gl.createBuffer();
 		// this.initializeTileInstanceBuffer();
@@ -77,6 +70,20 @@ export class TileLayer extends Layer {
 	}
 
 	paintTextureToTiles(overlayedTexture: OverlayedTexture): DoodleSnapshot {
+		this.tileTree.populateTilesOverlappingRect(
+			{
+				topLeft: {
+					x: overlayedTexture.cropBounds.topLeft.x / TextureTile.size,
+					y: overlayedTexture.cropBounds.topLeft.y / TextureTile.size
+				},
+				bottomRight: {
+					x: overlayedTexture.cropBounds.bottomRight.x / TextureTile.size,
+					y: overlayedTexture.cropBounds.bottomRight.y / TextureTile.size
+				}
+			},
+			overlayedTexture.detailLevel
+		);
+
 		return {};
 	}
 
@@ -91,11 +98,11 @@ export class TileLayer extends Layer {
 		const visibleTiles = this.tileTree.findTilesOverlappingRect({
 			topLeft: {
 				x: (-camera.position.x - halfWidthPixels) / TextureTile.size,
-				y: (camera.position.y - halfHeightPixels) / TextureTile.size
+				y: (-camera.position.y - halfHeightPixels) / TextureTile.size
 			},
 			bottomRight: {
 				x: (-camera.position.x + halfWidthPixels) / TextureTile.size,
-				y: (camera.position.y + halfHeightPixels) / TextureTile.size
+				y: (-camera.position.y + halfHeightPixels) / TextureTile.size
 			}
 		});
 
