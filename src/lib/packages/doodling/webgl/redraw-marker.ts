@@ -28,8 +28,8 @@ export class AnimationRedrawMarker extends RedrawMarker {
 
 	private redrawIfNeeded() {
 		if (this.needsRedraw) {
-			this.redraw();
 			this.needsRedraw = false;
+			this.redraw();
 		}
 	}
 }
