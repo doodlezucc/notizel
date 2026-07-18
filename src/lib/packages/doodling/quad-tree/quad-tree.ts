@@ -196,17 +196,17 @@ export class QuadTree<T> {
 						result.push(
 							...node.getDescendantTilesInBounds({
 								topLeft: {
-									x: minX - minTileX - x,
-									y: minY - minTileY - y
+									x: minX - x,
+									y: minY - y
 								},
 								bottomRight: {
-									x: maxX - minTileX - x,
-									y: maxY - minTileY - y
+									x: maxX - x,
+									y: maxY - y
 								}
 							})
 						);
 					} else {
-						result.push(node as TreeTileNode<T>);
+						result.push(...node.selfOrDescendants);
 					}
 				}
 			}
@@ -380,7 +380,7 @@ class TreeContainerNode<T> extends TreeNode<T> {
 						y: this.position.y * 2 + context.positionInContainer.y
 					};
 
-					if (levelOffset === 0) {
+					if (levelOffset >= 0) {
 						quadrant = new TreeTileNode<T>(
 							dataProvider.createTile(this.level - 1, childPosition),
 							this.level - 1,
@@ -392,7 +392,7 @@ class TreeContainerNode<T> extends TreeNode<T> {
 				}
 
 				if (quadrant instanceof TreeTileNode) {
-					if (levelOffset === 0) {
+					if (levelOffset >= 0) {
 						result.push(quadrant);
 					} else {
 						// This leaf quadrant needs to have further subdivisions
