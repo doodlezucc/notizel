@@ -20,7 +20,9 @@ test.each([
 	tree.addTileUnsafe(0, { x: 2, y: -3 }, '2,-3');
 	tree.addTileUnsafe(0, { x: -5, y: 2 }, '-5,2');
 
-	expect(tree.findTilesOverlappingRect({ topLeft: a, bottomRight: b })).toEqual(expectedTiles);
+	expect(
+		tree.findTilesOverlappingRect({ topLeft: a, bottomRight: b }).map((tile) => tile.data)
+	).toEqual(expectedTiles);
 });
 
 test('1-level grid', () => {
@@ -36,10 +38,12 @@ test('1-level grid', () => {
 	tree.increaseRootLevel();
 
 	expect(
-		tree.findTilesOverlappingRect({
-			topLeft: { x: 1.8, y: 1.3 },
-			bottomRight: { x: 3.2, y: 1.9 }
-		})
+		tree
+			.findTilesOverlappingRect({
+				topLeft: { x: 1.8, y: 1.3 },
+				bottomRight: { x: 3.2, y: 1.9 }
+			})
+			.map((tile) => tile.data)
 	).toEqual(['1,1', '2,1', '3,1']);
 });
 

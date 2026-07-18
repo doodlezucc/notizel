@@ -22,7 +22,7 @@ function tileCoord(x: number, y: number): Coord {
 	return `${x};${y}`;
 }
 
-interface LTRBRect {
+export interface LTRBRect {
 	topLeft: Vector;
 	bottomRight: Vector;
 }
@@ -168,8 +168,8 @@ export class QuadTree<T> {
 		return result;
 	}
 
-	findTilesOverlappingRect(rect: LTRBRect): T[] {
-		const result: T[] = [];
+	findTilesOverlappingRect(rect: LTRBRect): Tile<T>[] {
+		const result: Tile<T>[] = [];
 
 		const rootTileSize = Math.pow(2, this.rootLevel);
 		const inverseRootTileSize = 1 / rootTileSize;
@@ -194,7 +194,7 @@ export class QuadTree<T> {
 				if (node) {
 					if (node instanceof TreeContainerNode && isEdge(x, y)) {
 						result.push(
-							...node.getDescendantDataInBounds({
+							...node.getDescendantTilesInBounds({
 								topLeft: {
 									x: minX - minTileX - x,
 									y: minY - minTileY - y
@@ -206,7 +206,7 @@ export class QuadTree<T> {
 							})
 						);
 					} else {
-						result.push(...node.selfOrDescendantData);
+						result.push(node as TreeTileNode<T>);
 					}
 				}
 			}
@@ -225,7 +225,7 @@ abstract class TreeNode<T> implements TileLocation {
 		this.position = position;
 	}
 
-	abstract get selfOrDescendantData(): T[];
+	abstract get selfOrDescendants(): Tile<T>[];
 }
 
 export type QuadrantTuple<T> = [
@@ -252,12 +252,12 @@ class TreeContainerNode<T> extends TreeNode<T> {
 		this.children = children ?? [null, null, null, null];
 	}
 
-	override get selfOrDescendantData(): T[] {
-		const result: T[] = [];
+	override get selfOrDescendants(): Tile<T>[] {
+		const result: Tile<T>[] = [];
 
 		for (const child of this.children) {
 			if (child) {
-				result.push(...child.selfOrDescendantData);
+				result.push(...child.selfOrDescendants);
 			}
 		}
 
@@ -346,18 +346,18 @@ class TreeContainerNode<T> extends TreeNode<T> {
 		}
 	}
 
-	getDescendantDataInBounds(rect: LTRBRect): T[] {
-		const result: T[] = [];
+	getDescendantTilesInBounds(rect: LTRBRect): Tile<T>[] {
+		const result: Tile<T>[] = [];
 
 		this.processQuadrants(
 			(quadrant, context) => {
 				if (quadrant instanceof TreeTileNode) {
-					result.push(quadrant.data);
+					result.push(quadrant);
 				} else if (quadrant instanceof TreeContainerNode) {
 					if (context.localRect) {
-						result.push(...quadrant.getDescendantDataInBounds(context.localRect));
+						result.push(...quadrant.getDescendantTilesInBounds(context.localRect));
 					} else {
-						result.push(...quadrant.selfOrDescendantData);
+						result.push(...quadrant.selfOrDescendants);
 					}
 				}
 				return quadrant;
@@ -430,8 +430,8 @@ class TreeTileNode<T> extends TreeNode<T> implements Tile<T> {
 		this.data = data;
 	}
 
-	override get selfOrDescendantData(): T[] {
-		return [this.data];
+	override get selfOrDescendants(): Tile<T>[] {
+		return [this];
 	}
 
 	toContainerNode(quadrantData: QuadrantTuple<T>): TreeContainerNode<T> {
