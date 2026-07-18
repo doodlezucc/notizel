@@ -78,4 +78,27 @@ export class AxisAlignedBoundingBox extends BoundingBox {
 			y: this.size.height
 		}));
 	}
+
+	inflate(extent: number): AxisAlignedBoundingBox {
+		return AxisAlignedBoundingBox.fromTopLeft(
+			{ x: this.topLeft.x - extent, y: this.topLeft.y - extent },
+			{ width: this.size.width + extent * 2, height: this.size.height + extent * 2 }
+		);
+	}
+
+	growToInclude(other: AxisAlignedBoundingBox): AxisAlignedBoundingBox {
+		const topLeft: Vector = {
+			x: Math.min(this.topLeft.x, other.topLeft.x),
+			y: Math.min(this.topLeft.y, other.topLeft.y)
+		};
+		const bottomRight: Vector = {
+			x: Math.max(this.bottomRight.x, other.bottomRight.x),
+			y: Math.max(this.bottomRight.y, other.bottomRight.y)
+		};
+
+		return AxisAlignedBoundingBox.fromTopLeft(topLeft, {
+			width: bottomRight.x - topLeft.x,
+			height: bottomRight.y - topLeft.y
+		});
+	}
 }
