@@ -85,6 +85,13 @@ export class QuadTree<T> {
 		this.rootNodes = newRootNodes;
 	}
 
+	getAllTiles() {
+		return this.rootNodes
+			.values()
+			.flatMap((node) => node.selfOrDescendants)
+			.toArray();
+	}
+
 	// TODO: In the future, this should use some sort of "diff" approach. Right now,
 	// subdividing a data tile multiple times (so, tile -> tiles inside containers inside container)
 	// requires an unnecessary intermediate dataProvider.subdivide(...) call.

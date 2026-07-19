@@ -8,10 +8,11 @@ export class TileTree extends GLResource {
 	private readonly writableFramebuffer = this.gl.createFramebuffer();
 
 	destroy() {
-		// TODO!
-		// for (const tile of this.quadTree) {
-		// 	tile.destroy();
-		// }
+		for (const tile of this.quadTree.getAllTiles()) {
+			tile.data.destroy();
+		}
+		this.gl.deleteFramebuffer(this.readableFramebuffer);
+		this.gl.deleteFramebuffer(this.writableFramebuffer);
 	}
 
 	findTilesOverlappingRect(rect: LTRBRect): Tile<TextureTile>[] {
