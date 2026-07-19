@@ -5,6 +5,7 @@ import { GLQuad } from '../../webgl/geometry/quad';
 import { GLProgram, type GLProgramOf } from '../../webgl/program/program';
 import type { GL } from '../../webgl/resource';
 import { Layer } from '../layer';
+import { shaderApplyCrop } from '../shaders/apply-crop';
 import { shaderTexturedTile } from '../shaders/textured-tile';
 import { TextureTile } from './texture-tile';
 import { TileTree } from './tile-tree';
@@ -21,19 +22,33 @@ interface DoodleSnapshot {}
 export class TileLayer extends Layer {
 	private readonly tileTree = new TileTree(this.gl);
 	private readonly texturedTileProgram: GLProgramOf<typeof shaderTexturedTile>;
+	private readonly applyCropProgram: GLProgramOf<typeof shaderApplyCrop>;
 
 	private readonly quad0To1: GLQuad;
-	private readonly clipSpaceQuadUnlitVAO: GLGeometryShaderBinding;
+
+	private readonly quad0To1TileVAO: GLGeometryShaderBinding;
+	private readonly quad0To1ApplyCropVAO: GLGeometryShaderBinding;
+
 	// private readonly tileInstanceBuffer: WebGLBuffer;
+	private readonly framebuffer: WebGLFramebuffer;
 
 	constructor(gl: GL) {
 		super(gl);
-		this.quad0To1 = new GLQuad(gl, { topLeft: { x: 0, y: 0 }, bottomRight: { x: 1, y: 1 } });
+
 		this.texturedTileProgram = GLProgram.create(gl, shaderTexturedTile);
-		this.clipSpaceQuadUnlitVAO = this.quad0To1.createShaderBinding({
+		this.applyCropProgram = GLProgram.create(gl, shaderApplyCrop);
+
+		this.quad0To1 = new GLQuad(gl, { topLeft: { x: 0, y: 0 }, bottomRight: { x: 1, y: 1 } });
+		this.quad0To1TileVAO = this.quad0To1.createShaderBinding({
 			position: this.texturedTileProgram.attributes.position,
 			uv: this.texturedTileProgram.attributes.uv
 		});
+		this.quad0To1ApplyCropVAO = this.quad0To1.createShaderBinding({
+			position: this.applyCropProgram.attributes.position,
+			uv: this.applyCropProgram.attributes.uv
+		});
+
+		this.framebuffer = gl.createFramebuffer();
 
 		// this.tileInstanceBuffer = gl.createBuffer();
 		// this.initializeTileInstanceBuffer();
@@ -66,11 +81,12 @@ export class TileLayer extends Layer {
 	destroy() {
 		this.tileTree.destroy();
 		this.texturedTileProgram.destroy();
-		this.clipSpaceQuadUnlitVAO.destroy();
+		this.quad0To1TileVAO.destroy();
+		this.gl.deleteFramebuffer(this.framebuffer);
 	}
 
 	paintTextureToTiles(overlayedTexture: OverlayedTexture): DoodleSnapshot {
-		this.tileTree.populateTilesOverlappingRect(
+		const overlappingTiles = this.tileTree.populateTilesOverlappingRect(
 			{
 				topLeft: {
 					x: overlayedTexture.cropBounds.topLeft.x / TextureTile.size,
@@ -83,6 +99,50 @@ export class TileLayer extends Layer {
 			},
 			overlayedTexture.detailLevel
 		);
+
+		const gl = this.gl;
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+		gl.viewport(0, 0, TextureTile.size, TextureTile.size);
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+		this.applyCropProgram.bindProgram({
+			texture: (loc) => gl.uniform1i(loc, 0)
+		});
+
+		this.quad0To1ApplyCropVAO.bindVertexArray();
+
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, overlayedTexture.texture);
+
+		gl.activeTexture(gl.TEXTURE1);
+
+		for (const tile of overlappingTiles) {
+			const tileSize = Math.pow(2, tile.level);
+
+			gl.uniform2f(
+				this.applyCropProgram.uniforms.origin,
+				-(tile.position.x - overlayedTexture.textureBounds.topLeft.x / tileSize / TextureTile.size),
+				-(tile.position.y - overlayedTexture.textureBounds.topLeft.y / tileSize / TextureTile.size)
+			);
+
+			gl.uniform2f(
+				this.applyCropProgram.uniforms.size,
+				(overlayedTexture.textureBounds.bottomRight.x - overlayedTexture.textureBounds.topLeft.x) /
+					tileSize /
+					TextureTile.size,
+				(overlayedTexture.textureBounds.bottomRight.y - overlayedTexture.textureBounds.topLeft.y) /
+					tileSize /
+					TextureTile.size
+			);
+
+			gl.bindTexture(gl.TEXTURE_2D, tile.data.texture);
+			tile.data.prepareForFramebufferWrite();
+			gl.drawArrays(gl.TRIANGLES, 0, 6);
+		}
+
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 		return {};
 	}
@@ -125,7 +185,7 @@ export class TileLayer extends Layer {
 			camera.position.x * sx, -camera.position.y * sy, 1
 		]);
 
-		this.clipSpaceQuadUnlitVAO.bindVertexArray();
+		this.quad0To1TileVAO.bindVertexArray();
 		this.texturedTileProgram.bindProgram({
 			texture: (loc) => gl.uniform1i(loc, 0),
 			viewProjection: (loc) => gl.uniformMatrix3fv(loc, false, viewProjectionMatrix)

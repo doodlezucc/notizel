@@ -4,18 +4,15 @@ const VERTEX_SHADER_SRC = `#version 300 es
   layout(location = 0) in vec2 a_position;
   layout(location = 1) in vec2 a_uv;
 
-  uniform mat3 u_viewProjection;
-  uniform float u_instanceLevel;
-  uniform vec2 u_instancePosition;
+  uniform vec2 u_origin;
+  uniform vec2 u_size;
 
   out vec2 v_uv;
   
   void main() {
-    v_uv = a_uv;
+    v_uv = vec2(a_uv.x, 1.0 - a_uv.y);
     
-    float scale = exp2(u_instanceLevel);
-    vec2 worldPosition = (a_position + vec2(u_instancePosition.x, -u_instancePosition.y - 1.0)) * scale;
-    vec3 clip = u_viewProjection * vec3(worldPosition * 256.0, 1.0);
+    vec2 clip = (u_origin + a_position * u_size) * 2.0 - 1.0;
 
     gl_Position = vec4(clip.xy, 0.0, 1.0);
   }
@@ -33,18 +30,16 @@ const FRAGMENT_SHADER_SRC = `#version 300 es
   }
 `;
 
-export const shaderTexturedTile = describeWebGLProgram({
+export const shaderApplyCrop = describeWebGLProgram({
 	vertexShaderSource: VERTEX_SHADER_SRC,
 	fragmentShaderSource: FRAGMENT_SHADER_SRC,
-	// TODO: Instead of string lookups, prefer hardcoding the attribute locations here.
 	attributes: {
 		position: 'a_position',
 		uv: 'a_uv'
 	},
 	uniforms: {
-		viewProjection: 'u_viewProjection',
-		instanceLevel: 'u_instanceLevel',
-		instancePosition: 'u_instancePosition',
+		origin: 'u_origin',
+		size: 'u_size',
 		texture: 'u_texture'
 	}
 });

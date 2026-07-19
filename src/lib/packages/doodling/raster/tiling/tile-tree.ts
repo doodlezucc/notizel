@@ -1,14 +1,11 @@
-import { QuadTree, type LTRBRect, type Tile } from '../../quad-tree/quad-tree';
-import type { GL } from '../../webgl/resource';
+import { QuadTree, type LTRBRect, type QuadrantTuple, type Tile } from '../../quad-tree/quad-tree';
+import { GLResource } from '../../webgl/resource';
 import { TextureTile } from './texture-tile';
 
-export class TileTree {
-	private readonly gl: GL;
+export class TileTree extends GLResource {
 	private readonly quadTree = new QuadTree<TextureTile>();
-
-	constructor(gl: GL) {
-		this.gl = gl;
-	}
+	private readonly readableFramebuffer = this.gl.createFramebuffer();
+	private readonly writableFramebuffer = this.gl.createFramebuffer();
 
 	destroy() {
 		// TODO!
@@ -22,7 +19,13 @@ export class TileTree {
 	}
 
 	populateTilesOverlappingRect(rect: LTRBRect, targetLevel: number): Tile<TextureTile>[] {
-		return this.quadTree.populateTilesOverlappingRect(rect, {
+		const gl = this.gl;
+		const halfTileTextureSize = TextureTile.size >> 1;
+
+		gl.bindFramebuffer(gl.READ_FRAMEBUFFER, this.readableFramebuffer);
+		gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, this.writableFramebuffer);
+
+		const result = this.quadTree.populateTilesOverlappingRect(rect, {
 			targetLevel: targetLevel,
 			dataProvider: {
 				createTile: () => {
@@ -31,16 +34,54 @@ export class TileTree {
 				disposeTile: (tile) => {
 					tile.data.destroy();
 				},
-				// TODO: Paint parent tile onto quadrants
-				subdivideTile: () => {
-					return [
-						new TextureTile(this.gl),
-						new TextureTile(this.gl),
-						new TextureTile(this.gl),
-						new TextureTile(this.gl)
-					];
+				subdivideTile: (parent) => {
+					// Attach parent texture to framebuffer for reading/copying
+					gl.framebufferTexture2D(
+						gl.READ_FRAMEBUFFER,
+						gl.COLOR_ATTACHMENT0,
+						gl.TEXTURE_2D,
+						parent.data.texture,
+						0
+					);
+
+					const result = [
+						new TextureTile(gl),
+						new TextureTile(gl),
+						new TextureTile(gl),
+						new TextureTile(gl)
+					] as QuadrantTuple<TextureTile>;
+
+					for (let x = 0; x < 2; x++) {
+						for (let y = 0; y < 2; y++) {
+							const quadrant = result[x + y * 2]!;
+
+							gl.framebufferTexture2D(
+								gl.DRAW_FRAMEBUFFER,
+								gl.COLOR_ATTACHMENT0,
+								gl.TEXTURE_2D,
+								quadrant.texture,
+								0
+							);
+							gl.blitFramebuffer(
+								// Source bottom left
+								...[x * halfTileTextureSize, y * halfTileTextureSize],
+								// Source top right
+								...[(x + 1) * halfTileTextureSize, (y + 1) * halfTileTextureSize],
+								// Destination bounds
+								...[0, 0, TextureTile.size, TextureTile.size],
+								gl.COLOR_BUFFER_BIT,
+								gl.LINEAR
+							);
+						}
+					}
+
+					return result;
 				}
 			}
 		});
+
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+		return result;
 	}
 }
