@@ -28,8 +28,8 @@ export const shaderUnlitTexture = describeWebGLProgram({
 	vertexShaderSource: VERTEX_SHADER_SRC,
 	fragmentShaderSource: FRAGMENT_SHADER_SRC,
 	attributes: {
-		position: 'a_position',
-		texCoord: 'a_texCoord'
+		position: 0,
+		texCoord: 1
 	},
 	uniforms: {
 		texture: 'u_texture'

@@ -49,10 +49,9 @@ const FRAGMENT_SHADER_SRC = `#version 300 es
 export const shaderTexturedTile = describeWebGLProgram({
 	vertexShaderSource: VERTEX_SHADER_SRC,
 	fragmentShaderSource: FRAGMENT_SHADER_SRC,
-	// TODO: Instead of string lookups, prefer hardcoding the attribute locations here.
 	attributes: {
-		position: 'a_position',
-		uv: 'a_uv'
+		position: 0,
+		uv: 1
 	},
 	uniforms: {
 		viewProjection: 'u_viewProjection',

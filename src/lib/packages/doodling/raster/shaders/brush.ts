@@ -1,8 +1,8 @@
 import { describeWebGLProgram } from '../../webgl/program/program';
 
 const VERTEX_SHADER_SRC = `#version 300 es
-  in vec2 a_position;
-  in vec2 a_uv;
+  layout(location = 0) in vec2 a_position;
+  layout(location = 1) in vec2 a_uv;
 
   out vec2 v_uv;
   
@@ -32,8 +32,8 @@ export const shaderBrush = describeWebGLProgram({
 	vertexShaderSource: VERTEX_SHADER_SRC,
 	fragmentShaderSource: FRAGMENT_SHADER_SRC,
 	attributes: {
-		position: 'a_position',
-		uv: 'a_uv'
+		position: 0,
+		uv: 1
 	},
 	uniforms: {
 		color: 'u_color'

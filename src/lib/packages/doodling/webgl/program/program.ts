@@ -4,7 +4,7 @@ import { createWebGLProgram } from './create-program';
 interface WebGLProgramDescription {
 	vertexShaderSource: string;
 	fragmentShaderSource: string;
-	attributes?: Record<string, string>;
+	attributes?: Record<string, number>;
 	uniforms?: Record<string, string>;
 }
 
@@ -56,19 +56,7 @@ export class GLProgram<
 		} = description;
 
 		const program = createWebGLProgram(gl, vertexShaderSource, fragmentShaderSource);
-		const locations = { attributes: {}, uniforms: {} } as GLProgramLocationsOf<T>;
-
-		// Find named attribute locations
-		for (const [nameInJs, nameInShader] of Object.entries(attributes)) {
-			const location = gl.getAttribLocation(program, nameInShader);
-
-			if (location < 0) {
-				gl.deleteProgram(program);
-				throw new Error(`Attribute ${nameInShader} not found in shader program`);
-			}
-
-			locations.attributes[nameInJs as keyof T['attributes']] = location;
-		}
+		const locations = { attributes: attributes, uniforms: {} } as GLProgramLocationsOf<T>;
 
 		// Find named uniform locations
 		for (const [nameInJs, nameInShader] of Object.entries(uniforms)) {

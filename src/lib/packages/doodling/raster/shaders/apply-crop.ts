@@ -34,8 +34,8 @@ export const shaderApplyCrop = describeWebGLProgram({
 	vertexShaderSource: VERTEX_SHADER_SRC,
 	fragmentShaderSource: FRAGMENT_SHADER_SRC,
 	attributes: {
-		position: 'a_position',
-		uv: 'a_uv'
+		position: 0,
+		uv: 1
 	},
 	uniforms: {
 		origin: 'u_origin',
