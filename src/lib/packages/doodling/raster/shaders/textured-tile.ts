@@ -27,9 +27,22 @@ const FRAGMENT_SHADER_SRC = `#version 300 es
   out vec4 outColor;
   
   uniform sampler2D u_texture;
+
+  float edgeFactor() {
+      vec2 d = fwidth(v_uv);
+      vec2 nearZero = smoothstep(vec2(0.0), d * 1.5, v_uv);
+      vec2 nearOne  = smoothstep(vec2(0.0), d * 1.5, 1.0 - v_uv);
+      float lineU = min(nearZero.x, nearOne.x);
+      float lineV = min(nearZero.y, nearOne.y);
+      return min(lineU, lineV);
+  }
   
   void main() {
-    outColor = texture(u_texture, v_uv);
+    vec4 pixel = texture(u_texture, v_uv);
+
+    float edge = edgeFactor();
+    
+    outColor = mix(vec4(0.0, 0.0, 0.0, 1.0), pixel, edge);
   }
 `;
 
